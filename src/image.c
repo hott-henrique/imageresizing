@@ -28,7 +28,7 @@ Image img_Load(const char * filePath, char mode) {
 			break;
 
 		default:
-			fprintf(stderr, "Unknown image mode: %c", i->mode);
+			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
 			exit(EXIT_FAILURE);
 	}
 
@@ -36,6 +36,7 @@ Image img_Load(const char * filePath, char mode) {
 }
 
 void img_RemoveLines(Image i, int amount) {
+
 	switch (i->mode) {
 		case 'M':
 			mimg_RemoveLines(i->representations.M, amount);
@@ -46,7 +47,7 @@ void img_RemoveLines(Image i, int amount) {
 			break;
 
 		default:
-			fprintf(stderr, "Unknown image mode: %c", i->mode);
+			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -62,7 +63,7 @@ void img_RemoveColumns(Image i, int amount) {
 			break;
 
 		default:
-			fprintf(stderr, "Unknown image mode: %c", i->mode);
+			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -78,7 +79,7 @@ void img_Save(Image i, const char * fileName) {
 			break;
 
 		default:
-			fprintf(stderr, "Unknown image mode: %c", i->mode);
+			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
 			exit(EXIT_FAILURE);
 	}
 }
@@ -94,7 +95,7 @@ void img_Free(Image i) {
 			break;
 
 		default:
-			fprintf(stderr, "Unknown image mode: %c", i->mode);
+			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
 			exit(EXIT_FAILURE);
 	}
 	free(i);
