@@ -1,5 +1,12 @@
-#include "pixel.h"
+#ifndef TP2_PIXEL_HEADER
+#define TP2_PIXEL_HEADER
 
-float LI(int R, int G, int B) {
-	return 0.30 * R + 0.59 * G + 0.11 * B;
-}
+typedef struct pixel_t {
+	int r, g, b;
+	float li;
+	float energy;
+} * Pixel;
+
+float LI(int R, int G, int B);
+
+#endif
