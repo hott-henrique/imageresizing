@@ -8,7 +8,7 @@ enum ImageMode {
 
 typedef struct image_t * Image;
 
-Image img_Load(const char * file, char mode);
+Image img_Load(const char * filePath, char mode);
 
 void img_RemoveLines(Image i, int amount);
 void img_RemoveColumns(Image i, int amount);

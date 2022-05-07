@@ -101,26 +101,3 @@ void img_Free(Image i) {
 	free(i);
 }
 
-// FILE * f = fopen(filePath, "r");
-// if (NULL == f) {
-// 	fprintf(stderr, "Could not open file: %s\n", filePath);
-// 	exit(EXIT_FAILURE);
-// }
-
-// fseek(f, sizeof(char) * 3, SEEK_SET); // Ignorar a assinatura do arquivo.
-
-// // A especificação diz que todas as linhas tem no maximo 70 caracteres.
-// char line[70];
-
-// fgets(line, sizeof(line), f);
-
-// // Se a primeira linha após a assinatura é um comentario, ignore.
-// // E repita enquanto houver mais comentarios.
-// while (line[0] == '#') fgets(line, sizeof(line), f);
-
-// // A próxima linha que tem um real significado vai ser a que indica altura e largura da imagem.
-// int width = 0;
-// int height = 0;
-// sscanf(line, "%d %d", &width, &height);
-
-// fprintf(stdout, "%d %d\n", width, height);

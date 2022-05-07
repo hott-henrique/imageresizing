@@ -19,7 +19,7 @@ int main(int argc, const char ** argv) {
 
 	while (args_Parse(argc, argv));
 
-	fprintf(stdout, "%s %c %ld %ld\n", filePath, imageMode, linesToRemove, columnsToRemove);
+	//fprintf(stdout, "%s %c %ld %ld\n", filePath, imageMode, linesToRemove, columnsToRemove);
 
 	Image i = img_Load(filePath, imageMode);
 
