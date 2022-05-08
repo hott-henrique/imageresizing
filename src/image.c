@@ -36,7 +36,6 @@ Image img_Load(const char * filePath, char mode) {
 }
 
 void img_RemoveLines(Image i, int amount) {
-
 	switch (i->mode) {
 		case 'M':
 			mimg_RemoveLines(i->representations.M, amount);

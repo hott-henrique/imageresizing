@@ -23,17 +23,17 @@ int main(int argc, const char ** argv) {
 
 	Image i = img_Load(filePath, imageMode);
 
-	if (linesToRemove != 0 && columnsToRemove != 0) {
-	// Pediu para remover linhas e colunas.	
-	}
-	else if (linesToRemove != 0) {
-	// Pediu para remover apenas linhas.
-		img_RemoveLines(i, linesToRemove);
-	}
-	else {
-	// Pediu para remover apenas colunas.
-		img_RemoveColumns(i, columnsToRemove);
-	}
+	//if (linesToRemove != 0 && columnsToRemove != 0) {
+	//// Pediu para remover linhas e colunas.	
+	//}
+	//else if (linesToRemove != 0) {
+	//// Pediu para remover apenas linhas.
+	//	img_RemoveLines(i, linesToRemove);
+	//}
+	//else {
+	//// Pediu para remover apenas colunas.
+	//	img_RemoveColumns(i, columnsToRemove);
+	//}
 
 	img_Save(i, "Result.ppm");
 
