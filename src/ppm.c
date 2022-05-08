@@ -14,8 +14,7 @@ void ppm_GetProperties(const char * filePath, int * outWidth, int * outHeight, i
 
 	fseek(f, sizeof(char) * 3, SEEK_SET); // Ignorar a assinatura do arquivo.
 
-	// A especificação diz que todas as linhas tem no maximo 70 caracteres.
-	char line[70];
+	char line[100];
 
 	fgets(line, sizeof(line), f);
 
@@ -85,10 +84,7 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 			char c = lineRef[i];
 			int cCode = (int)(c);
 
-			if (c == '#') {
-				bHasFoundComponent = 0;
-				break;
-			}
+				if (c == '#') break;
 
 			if (cCode >= 48 && cCode <= 57) {
 				bHasFoundComponent = 1;
@@ -115,12 +111,15 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 			if (OK == NULL) return;
 
 			while (line[0] == '#') fgets(line, sizeof(line), file);
+
+			if (OK == NULL) return; // Case last line is a comment.
+
 			lineRef = &line[0];	
 
 			continue;
 		}
 
-		int componentValue = atoi(componentStr);
+		int componentValue = strtol(componentStr, NULL, 10);
 
 		switch (component) {
 			case 0:
