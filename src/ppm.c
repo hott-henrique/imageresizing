@@ -84,7 +84,7 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 			char c = lineRef[i];
 			int cCode = (int)(c);
 
-				if (c == '#') break;
+			if (c == '#') break;
 
 			if (cCode >= 48 && cCode <= 57) {
 				bHasFoundComponent = 1;
