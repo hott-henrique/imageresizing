@@ -136,6 +136,7 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 				component = 0;
 				p.b = componentValue;
 
+				//printf("%d, %d, %d\n", p.r, p.g, p.b);
 				callback(x, y, p, structData);
 
 				y++;
