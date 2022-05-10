@@ -12,23 +12,24 @@ struct img_matrix_t {
 	pixel * matrix;
 };
 
-int INDEX(MImage mi, int x, int y) {
-	int index = (x * mi->width) + y;
-	return index;
-};
+#define INDEX(x, y, lineSz) ((x * lineSz) + y)
+//int INDEX(int x, int y, int lineSz) {
+//	int index = (x * lineSz) + y;
+//	return index;
+//};
 
 
 void mimg_SetPixel(int x, int y, pixel p, void * miPtr) {
 	MImage mi = (MImage)(miPtr);
 
-	int index = INDEX(mi, x, y);
+	int index = INDEX(x, y, mi->width);
 	//printf("(%d, %d)[%d]\n", x, y, index);
 
 	mi->matrix[index].r = p.r;
 	mi->matrix[index].g = p.g;
 	mi->matrix[index].b = p.b;
 
-	mi->matrix[index].li = LI(&p);
+	px_CalculateLI(&mi->matrix[index]);
 }
 
 MImage mimg_Load(const char * filePath) {
@@ -50,12 +51,12 @@ void mimg_RemoveLines(MImage mi, int amount) {
 }
 
 void mimg_CalculateEnergies(MImage mi) {
-	for (int x = 0; x < mi->width; x++) {
-		for (int y = 0; y < mi->height; y++) {
-			int index = (mi->width * x) + y;
-			mi->matrix[index].energy = mimg_CalculateEnergy(mi, x, y);
-		}
-	}
+	//for (int x = 0; x < mi->width; x++) {
+	//	for (int y = 0; y < mi->height; y++) {
+	//		mimg_CalculateEnergy(mi, x, y);
+	//	}
+	//}
+	mimg_CalculateEnergy(mi, 0, 0);
 }
 
 int mimg_GetNextX(MImage mi, int current) {
@@ -78,66 +79,44 @@ int mimg_GetPreviousY(MImage mi, int current) {
 	else return current - 1;
 }
 
-float mimg_CalculateEnergy(MImage mi, int x, int y) {
-	// Right adjacent
-	int xR = x; int yR = mimg_GetNextY(mi, y);
+void mimg_CalculateEnergy(MImage mi, int x, int y) {
+	int xPrevious = mimg_GetPreviousX(mi, x);
+	int xNext = mimg_GetNextX(mi, x);
 
-	// Left adjacent
-	int xL = x; int yL = mimg_GetPreviousY(mi, y);
-
-	// Top adjacent
-	int xT = mimg_GetPreviousX(mi, x); int yT = y;
-
-	// Bottom adjacent
-	int xB = mimg_GetNextX(mi, x); int yB = y;
-
-	// Top left adjacent
-	int xTL = mimg_GetPreviousX(mi, x); int yTL = mimg_GetPreviousY(mi, y);
-
-	// Top right adjacent
-	int xTR = mimg_GetPreviousX(mi, x); int yTR = mimg_GetNextY(mi, y);
-
-	// Bottom left adjacent
-	int xBL = mimg_GetNextX(mi, x); int yBL = mimg_GetPreviousY(mi,y);
-
-	// Bottom right adjacent
-	int xBR = mimg_GetNextX(mi, x); int yBR = mimg_GetNextY(mi, y);
+	int yPrevious = mimg_GetPreviousY(mi, y);
+	int yNext = mimg_GetNextY(mi, y);
 
 	printf("Pairs:\n");
-	printf("(%d, %d) (%d, %d) (%d, %d)\n", xTL, yTL, xT, yT, xTR, yTR);
-	printf("(%d, %d) (%d, %d) (%d, %d)\n", xL,  yL,  x,  y,  xR,  yR);
-	printf("(%d, %d) (%d, %d) (%d, %d)\n", xBL, yBL, xB, yB, xBR, yBR);
+	printf("(%d, %d) (%d, %d) (%d, %d)\n", xPrevious, yPrevious, xPrevious, y, xPrevious, yNext);
+	printf("(%d, %d) (%d, %d) (%d, %d)\n", x,  		  yPrevious, x,  		y, x,  		  yNext);
+	printf("(%d, %d) (%d, %d) (%d, %d)\n", xNext, 	  yPrevious, xNext, 	y, xNext, 	  yNext);
 
-	int index = INDEX(mi, x, y);
-	int indexT = INDEX(mi, xT, yT);
-	int indexB = INDEX(mi, xB, yB);
-	int indexR = INDEX(mi, xR, yR);
-	int indexL = INDEX(mi, xL, yL);
-	int indexTL = INDEX(mi, xTL, yTL);
-	int indexBL = INDEX(mi, xBL, yBL);
-	int indexTR = INDEX(mi, xTR, yTR);
-	int indexBR = INDEX(mi, xBR, yBR);
+	int index = INDEX(x, y, mi->width);
+	int indexT = INDEX(xPrevious, y, mi->width);
+	int indexB = INDEX(xNext, y, mi->width);
+	int indexR = INDEX(x, yNext, mi->width);
+	int indexL = INDEX(x, yPrevious, mi->width);
+	int indexTL = INDEX(xPrevious, yPrevious, mi->width);
+	int indexBL = INDEX(xNext, yPrevious, mi->width);
+	int indexTR = INDEX(xPrevious, yNext, mi->width);
+	int indexBR = INDEX(xNext, yNext, mi->width);
 
-	//printf("MAX INDEX: %d\n", (mi->width * mi->height) - 1);
-	//printf("%d %d %d\n", indexTL, indexT,indexTR);
-	//printf("%d %d %d\n", indexL, index, indexR);
-	//printf("%d %d %d\n", indexBL, indexB, indexBR);
-
-	pixel region[3][3] = {
-		{ mi->matrix[indexTL], mi->matrix[indexT], mi->matrix[indexTR] },
-		{ mi->matrix[indexL],  mi->matrix[index],  mi->matrix[indexR] },
-		{ mi->matrix[indexBL], mi->matrix[indexB], mi->matrix[indexBR] },
+	float region[3][3] = {
+		{ mi->matrix[indexTL].li, mi->matrix[indexT].li, mi->matrix[indexTR].li },
+		{ mi->matrix[indexL].li,  mi->matrix[index].li,  mi->matrix[indexR].li  },
+		{ mi->matrix[indexBL].li, mi->matrix[indexB].li, mi->matrix[indexBR].li },
 	};
 
-	printf("Pixels:\n");
+	printf("LI's (region):\n");
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-			printf("(%d, %d, %d) ", region[i][j].r, region[i][j].g, region[i][j].b);
+			printf("%f ", region[i][j]);
 		}
 		printf("\n");
 	}
 
-	return 0.0f;
+	mi->matrix[INDEX(x, y, mi->width)].energy = px_Sobel(region);
+	printf("energy(%d, %d) = %f\n", x, y, mi->matrix[INDEX(x, y, mi->width)].energy);
 }
 
 void mimg_RemoveColumns(MImage mi, int amount) {
