@@ -6,6 +6,12 @@
 #include <math.h>
 #include <string.h>
 
+/**
+ * matrix:
+ * 		x = lines (height)
+ *		y = columns (width)
+ * */
+
 struct img_matrix_t {
 	int width, height;
 	int maxComponentValue;
@@ -13,11 +19,6 @@ struct img_matrix_t {
 };
 
 #define INDEX(x, y, lineSz) ((x * lineSz) + y)
-//int INDEX(int x, int y, int lineSz) {
-//	int index = (x * lineSz) + y;
-//	return index;
-//};
-
 
 void mimg_SetPixel(int x, int y, pixel p, void * miPtr) {
 	MImage mi = (MImage)(miPtr);
@@ -45,18 +46,30 @@ MImage mimg_Load(const char * filePath) {
 }
 
 void mimg_RemoveLines(MImage mi, int amount) {
-	mimg_CalculateEnergies(mi);
+	// Transpose First.
 
+	mimg_CalculateEnergies(mi, 0, mi->width);
+
+	for (int i = 0; i < mi->width; i++) { // for each column
+		// Calculate paths for each column
+		// mimg_CalculateEnergies(mi, start, end)
+	}	
+
+	for (int x = 0; x < mi->height; x++) {
+		for (int y = 0; y < mi->width; y++) {
+			printf("%f ", mi->matrix[INDEX(x, y, mi->width)].energy);
+		}
+		printf("\n");
+	}
 	printf("Message from remove lines matrix version.\n");
 }
 
-void mimg_CalculateEnergies(MImage mi) {
-	//for (int x = 0; x < mi->width; x++) {
-	//	for (int y = 0; y < mi->height; y++) {
-	//		mimg_CalculateEnergy(mi, x, y);
-	//	}
-	//}
-	mimg_CalculateEnergy(mi, 0, 0);
+void mimg_CalculateEnergies(MImage mi, int start, int end) {
+	for (int x = 0; x < mi->height; x++) {
+		for (int y = start; y < end; y++) {
+			mimg_CalculateEnergy(mi, x, y);
+		}
+	}
 }
 
 int mimg_GetNextX(MImage mi, int current) {
@@ -86,10 +99,10 @@ void mimg_CalculateEnergy(MImage mi, int x, int y) {
 	int yPrevious = mimg_GetPreviousY(mi, y);
 	int yNext = mimg_GetNextY(mi, y);
 
-	printf("Pairs:\n");
-	printf("(%d, %d) (%d, %d) (%d, %d)\n", xPrevious, yPrevious, xPrevious, y, xPrevious, yNext);
-	printf("(%d, %d) (%d, %d) (%d, %d)\n", x,  		  yPrevious, x,  		y, x,  		  yNext);
-	printf("(%d, %d) (%d, %d) (%d, %d)\n", xNext, 	  yPrevious, xNext, 	y, xNext, 	  yNext);
+	//printf("Pairs:\n");
+	//printf("(%d, %d) (%d, %d) (%d, %d)\n", xPrevious, yPrevious, xPrevious, y, xPrevious, yNext);
+	//printf("(%d, %d) (%d, %d) (%d, %d)\n", x,  		  yPrevious, x,  		y, x,  		  yNext);
+	//printf("(%d, %d) (%d, %d) (%d, %d)\n", xNext, 	  yPrevious, xNext, 	y, xNext, 	  yNext);
 
 	int index = INDEX(x, y, mi->width);
 	int indexT = INDEX(xPrevious, y, mi->width);
@@ -107,16 +120,15 @@ void mimg_CalculateEnergy(MImage mi, int x, int y) {
 		{ mi->matrix[indexBL].li, mi->matrix[indexB].li, mi->matrix[indexBR].li },
 	};
 
-	printf("LI's (region):\n");
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			printf("%f ", region[i][j]);
-		}
-		printf("\n");
-	}
+	//printf("LI's (region):\n");
+	//for (int i = 0; i < 3; i++) {
+	//	for (int j = 0; j < 3; j++) {
+	//		printf("%f ", region[i][j]);
+	//	}
+	//	printf("\n");
+	//}
 
 	mi->matrix[INDEX(x, y, mi->width)].energy = px_Sobel(region);
-	printf("energy(%d, %d) = %f\n", x, y, mi->matrix[INDEX(x, y, mi->width)].energy);
 }
 
 void mimg_RemoveColumns(MImage mi, int amount) {

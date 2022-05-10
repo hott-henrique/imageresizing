@@ -25,12 +25,10 @@ int main(int argc, const char ** argv) {
 
 	if (linesToRemove != 0 && columnsToRemove != 0) {
 	// Pediu para remover linhas e colunas.	
-	}
-	else if (linesToRemove != 0) {
+	} else if (linesToRemove != 0) {
 	// Pediu para remover apenas linhas.
 		img_RemoveLines(i, linesToRemove);
-	}
-	else {
+	} else {
 	// Pediu para remover apenas colunas.
 		img_RemoveColumns(i, columnsToRemove);
 	}

@@ -5,7 +5,7 @@ typedef struct img_matrix_t * MImage;
 
 MImage mimg_Load(const char * filePath);
 
-void mimg_CalculateEnergies(MImage mi);
+void mimg_CalculateEnergies(MImage mi, int start, int end);
 void mimg_CalculateEnergy(MImage mi, int x, int y);
 
 void mimg_RemoveLines(MImage mi, int amount);

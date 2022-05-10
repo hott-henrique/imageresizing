@@ -19,24 +19,10 @@ float px_Sobel(float liRegion[3][3]) {
 }
 
 float px_ApplyWeigths(float liRegion[3][3], float weigths[3][3]) {
-	float matResult[3][3];
-	memset(matResult, 0, sizeof(matResult));
-	// memset 0
-
-	// Multiply matrix
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
-			for (int k = 0; k < 3; k++) {
-				matResult[i][j] += liRegion[i][k] * weigths[k][j];
-			}
-		}
-	}
-
 	float result = 0.0f;
-
 	for (int i = 0; i < 3; i++) {
 		for (int j = 0; j < 3; j++) {
-			result += matResult[i][j];
+			result += liRegion[i][j] * weigths[i][j];
 		}
 	}
 
