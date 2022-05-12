@@ -4,10 +4,19 @@
 extern float Gx[3][3];
 extern float Gy[3][3];
 
+enum PathOptions {
+	NOT_CHECKED_YET = -2,
+	LEFT = -1,
+	CENTER = 0,
+	RIGHT = 1,
+};
+
 struct pixel_t {
 	int r, g, b;
 	float li;
 	float energy;
+	short next; //Represent the next pixel in path
+	float energyInThatPath;	
 };
 
 typedef struct pixel_t pixel;
