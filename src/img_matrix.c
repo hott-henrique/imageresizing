@@ -81,6 +81,24 @@ void mimg_RemoveLines(MImage mi, int amount) {
 
 static void mimg_Transpose(MImage mi) {
 	printf("Function call: %s\n", __FUNCTION__);
+	int indexN, indexT, aux;
+
+	pixel * matrix = (pixel *) malloc((mi->height * mi->width) * sizeof(pixel));
+
+	for(int x = 0; x < mi->height; x++){
+		for(int y = 0; y < mi->width; y++){
+			indexN = INDEX(x, y, mi->width);
+			indexT = INDEX(y, x, mi->height);
+			matrix[indexT] = mi->matrix[indexN];
+		}
+	}
+
+	aux = mi->width;
+	mi->width = mi->height;
+	mi->height = aux;
+
+	free(mi->matrix);
+	mi->matrix = matrix;
 }
 
 void mimg_RemoveColumns(MImage mi, int amount) {
