@@ -36,6 +36,7 @@ struct img_matrix_t {
 	int maxComponentValue;
 	pixel * matrix;
 	int countRemovedColumns;
+	int countRemovedLines;
 };
 
 #define INDEX(x, y, lineSz) ((x * lineSz) + y)
@@ -66,13 +67,12 @@ void mimg_SetPixel(int x, int y, pixel p, void * miPtr) {
 	mi->matrix[index].next = NOT_CHECKED_YET;
 }
 
-
 void mimg_RemoveLines(MImage mi, int amount) {
 	printf("Function call: %s\n", __FUNCTION__);
 	mimg_Transpose(mi); 
 
-	// mi->countRemovedColumns -= amount; 
-	// mi->countRemovedLines += amount; 
+	mi->countRemovedColumns -= amount; 
+	mi->countRemovedLines += amount; 
 
 	mimg_RemoveColumns(mi, amount);
 
@@ -81,24 +81,23 @@ void mimg_RemoveLines(MImage mi, int amount) {
 
 static void mimg_Transpose(MImage mi) {
 	printf("Function call: %s\n", __FUNCTION__);
-	int indexN, indexT, aux;
 
-	pixel * matrix = (pixel *) malloc((mi->height * mi->width) * sizeof(pixel));
+	Pixel newMatrix = (Pixel) malloc((mi->height * mi->width) * sizeof(pixel));
 
 	for(int x = 0; x < mi->height; x++){
 		for(int y = 0; y < mi->width; y++){
-			indexN = INDEX(x, y, mi->width);
-			indexT = INDEX(y, x, mi->height);
-			matrix[indexT] = mi->matrix[indexN];
+			int indexN = INDEX(x, y, mi->width);
+			int indexT = INDEX(y, x, mi->height);
+			newMatrix[indexT] = mi->matrix[indexN];
 		}
 	}
 
-	aux = mi->width;
+	int aux = mi->width;
 	mi->width = mi->height;
 	mi->height = aux;
 
 	free(mi->matrix);
-	mi->matrix = matrix;
+	mi->matrix = newMatrix;
 }
 
 void mimg_RemoveColumns(MImage mi, int amount) {
@@ -108,15 +107,8 @@ void mimg_RemoveColumns(MImage mi, int amount) {
 
 	int start = 0;
 	int end = mi->width;
-	for (int i = 0; i < amount; i++) { // for each column
+	for (int i = 0; i < amount; i++) {
 		mimg_CalculateEnergies(mi, start, end);
-
-		//for (int x = 0; x < mi->height; x++) {
-		//	for (int y = 0; y < mi->width; y++) {
-		//		printf("%f ", mi->matrix[INDEX(x, y, mi->width)].energy);
-		//	}
-		//	printf("\n");
-		//}
 
 		mimg_CalculatePaths(mi);
 
@@ -184,18 +176,8 @@ static int mimg_GetBestPath(MImage mi) {
 static void mimg_CalculatePaths(MImage mi) {
 	printf("Function call: %s\n", __FUNCTION__);
 	for (int y = 0; y < mi->width; y++) {
-		float result = mimg_CalculatePathOfPixel(mi, 0, y);
-
-		//printf("Path value from column %d = %f\n", y, result);
+		mimg_CalculatePathOfPixel(mi, 0, y);
 	}
-
-	//for (int x = 0; x < mi->height; x++) {
-	//	for (int y = 0; y < mi->width; y++) {
-	//		printf("%i\t", mi->matrix[INDEX(x, y, mi->width)].next);
-	//	}
-	//	printf("\n");
-	//}
-
 }
 
 static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) {
@@ -302,10 +284,10 @@ void mimg_Save(MImage mi, const char * fileName) {
 	FILE * f = fopen(fileName, "w");
 
 	fprintf(f, "P3\n");
-	fprintf(f, "%d %d\n", mi->width - mi->countRemovedColumns, mi->height);
+	fprintf(f, "%d %d\n", mi->width - mi->countRemovedColumns, mi->height - mi->countRemovedLines);
 	fprintf(f, "%d\n", mi->maxComponentValue);
 
-	for (int x = 0; x < mi->height; x++) {
+	for (int x = 0; x < mi->height - mi->countRemovedLines; x++) {
 		for (int y = 0; y < mi->width - mi->countRemovedColumns; y++) {
 			// printf("matrix(%d, %d)[%d]\n", x, y, INDEX(x, y, mi->width));
 			pixel p = mi->matrix[INDEX(x, y, mi->width)];
