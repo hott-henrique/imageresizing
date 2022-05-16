@@ -1,5 +1,5 @@
 CFLAGS := -Wall -Wextra -iquote ./include
-DEFS := NONE
+DEFS := -DNONE
 NAME := tp2
 
 SRC_DIR := src
@@ -11,8 +11,16 @@ $(NAME): $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $(NAME) -lm
 
 obj/%.o: $(SRC_DIR)/%.c
-	$(CC) -c $(CFLAGS) $< -D $(DEFS) -o $@
+	$(CC) $(DEFS) -c $(CFLAGS) $< -o $@
 
-.PHONY: clean
+.PHONY: clean help
 clean:
 	rm -f $(OBJ_DIR)/*.o ./$(NAME)
+
+help:
+	@echo "Usages:"
+	@echo "	make"
+	@echo "	make DEFS=YOUR_OPTIONS_HERE"
+	@echo "Options:"
+	@echo "	-DSAVE_TEMPS -DSAVE_FREQUENCY=25"
+	@echo "	-DSOBEL_FELDMAN"
