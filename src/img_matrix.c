@@ -1,5 +1,6 @@
 #include "img_matrix.h"
 #include "pixel.h"
+#include "ppm.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -15,7 +16,7 @@ struct img_matrix_t {
 	int currentWidth, currentHeight;
 	int allocatedWidth, allocatedHeight;
 	int maxComponentValue;
-	pixel * matrix;
+	Pixel matrix;
 };
 
 #define INDEX(x, y, rowSize) ((x * rowSize) + y)
@@ -39,10 +40,10 @@ static void mimg_SetPathToPink(MImage mi, int index);
 static void mimg_CalculateEnergies(MImage mi, int start, int end);
 static void mimg_CalculateEnergy(MImage mi, int x, int y);
 
-static int mimg_GetPreviousX(MImage mi, int current);
+static int mimg_GetPreviousX(int current);
 static int mimg_GetNextX(MImage mi, int current);
 
-static int mimg_GetPreviousY(MImage mi, int current);
+static int mimg_GetPreviousY(int current);
 static int mimg_GetNextY(MImage mi, int current);
 
 MImage mimg_Load(const char * filePath) {
@@ -130,7 +131,7 @@ void mimg_RemoveColumns(MImage mi, int amount) {
 
 		mimg_RemovePath(mi, index, &start, &end);
 
-		start = mimg_GetPreviousX(mi, start);
+		start = mimg_GetPreviousX(start);
 		end = mimg_GetNextX(mi, end);	
 
 		mi->currentWidth--;
@@ -148,10 +149,10 @@ static void mimg_CalculateEnergies(MImage mi, int start, int end) {
 }
 
 static void mimg_CalculateEnergy(MImage mi, int x, int y) {
-	int xPrevious = mimg_GetPreviousX(mi, x);
+	int xPrevious = mimg_GetPreviousX(x);
 	int xNext = mimg_GetNextX(mi, x);
 
-	int yPrevious = mimg_GetPreviousY(mi, y);
+	int yPrevious = mimg_GetPreviousY(y);
 	int yNext = mimg_GetNextY(mi, y);
 
 	int index = INDEX(x, y, mi->allocatedWidth);
@@ -201,7 +202,7 @@ static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) {
 
 	if (x == mi->currentHeight - 1) return p->energy;
 
-	int yPrevious = mimg_GetPreviousY(mi, y);
+	int yPrevious = mimg_GetPreviousY(y);
 	int yNext = mimg_GetNextY(mi, y);
 
 	int xNext = mimg_GetNextX(mi, x);
@@ -237,7 +238,7 @@ static void mimg_SetPathToPink(MImage mi, int y) {
 
 		switch (pathToFollow) {
 			case LEFT:
-				y = mimg_GetPreviousY(mi, y);
+				y = mimg_GetPreviousY(y);
 			break;
 
 			case CENTER: continue;
@@ -260,7 +261,7 @@ static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 
 		switch (pathToFollow) {
 			case LEFT:
-				y = mimg_GetPreviousY(mi, y);
+				y = mimg_GetPreviousY(y);
 				*(outStart) = y;
 			break;
 
@@ -291,7 +292,7 @@ static int mimg_GetNextX(MImage mi, int current) {
 	else return current + 1;
 }
 
-static int mimg_GetPreviousX(MImage mi, int current) {
+static int mimg_GetPreviousX(int current) {
 	if (current == 0) return 0;
 	else return current - 1;
 }
@@ -301,7 +302,7 @@ static int mimg_GetNextY(MImage mi, int current) {
 	else return current + 1;
 }
 
-static int mimg_GetPreviousY(MImage mi, int current) {
+static int mimg_GetPreviousY(int current) {
 	if (current == 0) return current;
 	else return current - 1;
 }
