@@ -30,7 +30,7 @@ static int mimg_GetBestPath(MImage mi);
 static void mimg_CalculatePaths(MImage mi);
 static float mimg_CalculatePathOfPixel(MImage mi, int x, int y);
 
-static void mimg_RemovePath(MImage mi, int index, int * start, int * end);
+static void mimg_RemovePath(MImage mi, int index, int * outStart, int * outEnd);
 static void mimg_RemovePixel(MImage mi, int x, int y);
 
 static void mimg_SetPathToPink(MImage mi, int index);
@@ -117,6 +117,7 @@ void mimg_RemoveColumns(MImage mi, int amount) {
 
 	int start = 0;
 	int end = mi->allocatedWidth;
+
 	for (int i = 0; i < amount; i++) {
 		mimg_CalculateEnergies(mi, start, end);
 
@@ -132,12 +133,15 @@ void mimg_RemoveColumns(MImage mi, int amount) {
 		//	printf("\n");
 		//}
 
-		if (i % 25 == 0) {
+		#if defined(SAVE_TEMPS) && defined(SAVE_FREQUENCY)
+		if (i % SAVE_FREQUENCY  == 0) {
 			char filePath[200];
 			sprintf(filePath, "File%d.ppm", i);
 			mimg_SetPathToPink(mi, index);
 			mimg_Save(mi, filePath);
 		}
+		#endif
+
 		mimg_RemovePath(mi, index, &start, &end);
 
 		start = mimg_GetPreviousX(mi, start);
@@ -266,10 +270,9 @@ static void mimg_SetPathToPink(MImage mi, int y) {
 	}
 }
 
-// start represents the most left column that had a pixel removed.
-// end represents the most right column that had a pixel removed.
-// y represents the column that have the best path.
-static void mimg_RemovePath(MImage mi, int y, int * start, int * end) {
+// start and end represents, will contain, at the end of the function, respectively, the most left and right column that had a pixel removed.
+// y represents the column that contains the best path.
+static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 	printf("Function call: %s\n", __FUNCTION__);
 
 	for (int x = 0; x < mi->currentHeight; x++) {
@@ -290,8 +293,8 @@ static void mimg_RemovePath(MImage mi, int y, int * start, int * end) {
 		}
 	}
 
-	*(start) = y;
-	*(end) = y;
+	*(outStart) = y;
+	*(outEnd) = y;
 }
 
 static void mimg_RemovePixel(MImage mi, int x, int y) {
