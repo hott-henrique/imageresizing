@@ -35,7 +35,9 @@ static float mimg_CalculatePathOfPixel(MImage mi, int x, int y);
 static void mimg_RemovePath(MImage mi, int index, int * outStart, int * outEnd);
 static void mimg_RemovePixel(MImage mi, int x, int y);
 
+#if defined(SAVE_TEMPS) && defined(SAVE_FREQUENCY)
 static void mimg_SetPathToPink(MImage mi, int index);
+#endif
 
 static void mimg_CalculateEnergies(MImage mi, int start, int end);
 static void mimg_CalculateEnergy(MImage mi, int x, int y);
@@ -171,7 +173,7 @@ static void mimg_CalculateEnergy(MImage mi, int x, int y) {
 		{ mi->matrix[indexBL].li, mi->matrix[indexB].li, mi->matrix[indexBR].li },
 	};
 
-	mi->matrix[INDEX(x, y, mi->allocatedWidth)].energy = px_Sobel(region);
+	mi->matrix[INDEX(x, y, mi->allocatedWidth)].energy = px_CalculateEnergy(region);
 }
 
 static int mimg_GetBestPath(MImage mi) {
@@ -227,6 +229,7 @@ static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) {
 	return p->energyInThatPath;
 }
 
+#if defined(SAVE_TEMPS) && defined(SAVE_FREQUENCY)
 static void mimg_SetPathToPink(MImage mi, int y) {
 	for (int x = 0; x < mi->currentHeight; x++) {
 		short pathToFollow = mi->matrix[INDEX(x, y, mi->allocatedWidth)].next;	
@@ -249,6 +252,7 @@ static void mimg_SetPathToPink(MImage mi, int y) {
 		}
 	}
 }
+#endif
 
 static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 	*(outStart) = y;
