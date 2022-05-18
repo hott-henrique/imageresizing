@@ -4,7 +4,7 @@
 #include <math.h>
 #include <string.h>
 
-#if defined(SOBEL_FELDMAN)
+#ifndef SOBEL_FELDMAN
 float Gx[3][3] = { { -1,  0, +1 }, { -2, 0, +2 }, { -1,  0, +1 } };
 float Gy[3][3] = { { -1, -2, -1 }, {  0, 0,  0 }, { +1, +2, +1 } };
 #else

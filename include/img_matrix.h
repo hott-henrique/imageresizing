@@ -7,6 +7,7 @@ MImage mimg_Load(const char * filePath);
 
 void mimg_RemoveLines(MImage mi, int amount);
 void mimg_RemoveColumns(MImage mi, int amount);
+void mimg_RemoveLinesAndColumns(MImage mi, int amountLines, int amountColumns);
 
 void mimg_Save(MImage mi, const char * fileName);
 

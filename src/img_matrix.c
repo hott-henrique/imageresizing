@@ -1,4 +1,5 @@
 #include "img_matrix.h"
+#include "mlimits.h"
 #include "pixel.h"
 #include "ppm.h"
 
@@ -19,8 +20,6 @@ struct img_matrix_t {
 	Pixel matrix;
 };
 
-#define INDEX(x, y, rowSize) ((x * rowSize) + y)
-
 static void mimg_SetPixel(int x, int y, pixel p, void * miPtr);
 
 static void mimg_Transpose(MImage mi);
@@ -36,17 +35,11 @@ static void mimg_RemovePath(MImage mi, int index, int * outStart, int * outEnd);
 static void mimg_RemovePixel(MImage mi, int x, int y);
 
 #if defined(SAVE_TEMPS) && defined(SAVE_FREQUENCY)
-static void mimg_SetPathToPink(MImage mi, int index);
+	static void mimg_SetPathToPink(MImage mi, int index);
 #endif
 
 static void mimg_CalculateEnergies(MImage mi, int start, int end);
 static void mimg_CalculateEnergy(MImage mi, int x, int y);
-
-static int mimg_GetPreviousX(int current);
-static int mimg_GetNextX(MImage mi, int current);
-
-static int mimg_GetPreviousY(int current);
-static int mimg_GetNextY(MImage mi, int current);
 
 MImage mimg_Load(const char * filePath) {
 	MImage mi = (MImage) malloc(sizeof(struct img_matrix_t));
@@ -68,16 +61,33 @@ void mimg_SetPixel(int x, int y, pixel p, void * miPtr) {
 
 	int index = INDEX(x, y, mi->allocatedWidth);
 
-	mi->matrix[index].r = p.r;
-	mi->matrix[index].g = p.g;
-	mi->matrix[index].b = p.b;
+	Pixel px = &mi->matrix[index];
 
-	px_CalculateLI(&mi->matrix[index]);
+	px->r = p.r;
+	px->g = p.g;
+	px->b = p.b;
 
-	mi->matrix[index].next = NOT_CHECKED_YET;
+	px_CalculateLI(px);
+
+	px->next = NOT_CHECKED_YET;
+}
+
+void mimg_RemoveLinesAndColumns(MImage mi, int amountLines, int amountColumns) {
+	while (amountLines != 0 && amountColumns != 0) {
+		// Get best path column value.
+		// Get best path line value.
+		// if column value < line value: remove column && amountColumns--
+		// else: remove line && amountLines--
+	}
+
+	// Any of these will be 0 so it will just return.
+	mimg_RemoveLines(mi, amountLines);
+	mimg_RemoveColumns(mi, amountColumns);
 }
 
 void mimg_RemoveLines(MImage mi, int amount) {
+	if (amount == 0) return;
+
 	mimg_Transpose(mi); 
 
 	mimg_RemoveColumns(mi, amount);
@@ -88,8 +98,8 @@ void mimg_RemoveLines(MImage mi, int amount) {
 static void mimg_Transpose(MImage mi) {
 	Pixel newMatrix = (Pixel) malloc((mi->allocatedHeight * mi->allocatedWidth) * sizeof(pixel));
 
-	for (int x = 0; x < mi->allocatedHeight; x++){
-		for (int y = 0; y < mi->allocatedWidth; y++){
+	for (int y = 0; y < mi->allocatedWidth; y++){
+		for (int x = 0; x < mi->allocatedHeight; x++){
 			int indexN = INDEX(x, y, mi->allocatedWidth);
 			int indexT = INDEX(y, x, mi->allocatedHeight);
 			newMatrix[indexT] = mi->matrix[indexN];
@@ -113,7 +123,7 @@ static void mimg_Transpose(MImage mi) {
 
 void mimg_RemoveColumns(MImage mi, int amount) {
 	int start = 0;
-	int end = mi->allocatedWidth;
+	int end = mi->allocatedWidth - 1;
 
 	for (int i = 0; i < amount; i++) {
 		mimg_CalculateEnergies(mi, start, end);
@@ -133,8 +143,8 @@ void mimg_RemoveColumns(MImage mi, int amount) {
 
 		mimg_RemovePath(mi, index, &start, &end);
 
-		start = mimg_GetPreviousX(start);
-		end = mimg_GetNextX(mi, end);	
+		start = ml_LimitedUMinus(start, 0);
+		end = ml_LimitedUPlus(end, mi->currentHeight - 1);
 
 		mi->currentWidth--;
 
@@ -143,19 +153,19 @@ void mimg_RemoveColumns(MImage mi, int amount) {
 }
 
 static void mimg_CalculateEnergies(MImage mi, int start, int end) {
-	for (int x = 0; x < mi->currentHeight; x++) {
-		for (int y = start; y < end; y++) {
+	for (int y = start; y <= end; y++) {
+		for (int x = 0; x < mi->currentHeight; x++) {
 			mimg_CalculateEnergy(mi, x, y);
 		}
 	}
 }
 
 static void mimg_CalculateEnergy(MImage mi, int x, int y) {
-	int xPrevious = mimg_GetPreviousX(x);
-	int xNext = mimg_GetNextX(mi, x);
+	int xPrevious = ml_LimitedUMinus(x, 0);
+	int xNext = ml_LimitedUPlus(x, mi->currentHeight - 1);
 
-	int yPrevious = mimg_GetPreviousY(y);
-	int yNext = mimg_GetNextY(mi, y);
+	int yPrevious = ml_LimitedUMinus(y, 0);
+	int yNext = ml_LimitedUPlus(y, mi->currentWidth - 1);
 
 	int index = INDEX(x, y, mi->allocatedWidth);
 	int indexT = INDEX(xPrevious, y, mi->allocatedWidth);
@@ -204,10 +214,10 @@ static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) {
 
 	if (x == mi->currentHeight - 1) return p->energy;
 
-	int yPrevious = mimg_GetPreviousY(y);
-	int yNext = mimg_GetNextY(mi, y);
+	int yPrevious = ml_LimitedUMinus(y, 0);
+	int yNext = ml_LimitedUPlus(y, mi->currentWidth - 1);
 
-	int xNext = mimg_GetNextX(mi, x);
+	int xNext = ml_LimitedUPlus(x, mi->currentHeight - 1);
 
 	int minIndex = 0;
 	float cheapestPath = 0.0f;
@@ -241,13 +251,13 @@ static void mimg_SetPathToPink(MImage mi, int y) {
 
 		switch (pathToFollow) {
 			case LEFT:
-				y = mimg_GetPreviousY(y);
+				y = li_LimitedUMinus(y, 0);
 			break;
 
 			case CENTER: continue;
 
 			case RIGHT:
-				y = mimg_GetNextY(mi, y);
+				y = li_LimitedUPlus(y, mi->width - 1);
 			break;
 		}
 	}
@@ -265,14 +275,14 @@ static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 
 		switch (pathToFollow) {
 			case LEFT:
-				y = mimg_GetPreviousY(y);
+				y = ml_LimitedUMinus(y, 0);
 				*(outStart) = y;
 			break;
 
 			case CENTER: continue;
 
 			case RIGHT:
-				y = mimg_GetNextY(mi, y);
+				y = ml_LimitedUPlus(y, mi->currentWidth - 1);
 				*(outEnd) = y;
 			break;
 		}
@@ -289,26 +299,6 @@ static void mimg_RemovePixel(MImage mi, int x, int y) {
 	size_t n = mi->currentWidth - y - 1;
 
 	memcpy(dest, src, sizeof(pixel) * n);
-}
-
-static int mimg_GetNextX(MImage mi, int current) {
-	if (current == mi->currentHeight - 1) return current;
-	else return current + 1;
-}
-
-static int mimg_GetPreviousX(int current) {
-	if (current == 0) return 0;
-	else return current - 1;
-}
-
-static int mimg_GetNextY(MImage mi, int current) {
-	if (current == mi->currentWidth - 1) return current;
-	else return current + 1;
-}
-
-static int mimg_GetPreviousY(int current) {
-	if (current == 0) return current;
-	else return current - 1;
 }
 
 static void mimg_SetAllPathsNotChecked(MImage mi) {
@@ -328,8 +318,8 @@ void mimg_Save(MImage mi, const char * fileName) {
 	fprintf(f, "%d %d\n", mi->currentWidth, mi->currentHeight);
 	fprintf(f, "%d\n", mi->maxComponentValue);
 
-	for (int x = 0; x < mi->currentHeight; x++) {
-		for (int y = 0; y < mi->currentWidth; y++) {
+	for (int y = 0; y < mi->currentWidth; y++) {
+		for (int x = 0; x < mi->currentHeight; x++) {
 			pixel p = mi->matrix[INDEX(x, y, mi->allocatedWidth)];
 			fprintf(f, "%d %d %d\n", p.r, p.g, p.b);	
 		}
