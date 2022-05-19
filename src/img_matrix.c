@@ -101,6 +101,7 @@ void mimg_RemoveLines(MImage mi, int amount) {
 }
 
 static void mimg_Transpose(MImage mi) {
+	// Could allocate only what is needed (mi->currentHeight * mi->allocatedWidth) when removing diagonals.
 	Pixel newMatrix = (Pixel) malloc((mi->allocatedHeight * mi->allocatedWidth) * sizeof(pixel));
 
 	for (int y = 0; y < mi->allocatedWidth; y++){
@@ -128,7 +129,7 @@ static void mimg_Transpose(MImage mi) {
 
 void mimg_RemoveColumns(MImage mi, int amount) {
 	int start = 0;
-	int end = mi->allocatedWidth - 1;
+	int end = mi->currentWidth - 1;
 
 	for (int i = 0; i < amount; i++) {
 		mimg_CalculateEnergies(mi, start, end);
@@ -296,7 +297,9 @@ static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 				*(outStart) = y;
 			break;
 
-			case CENTER: continue;
+			case LAST_PIXEL:
+			case CENTER:
+				continue;
 
 			case RIGHT:
 				y = ml_LimitedUPlus(y, mi->currentWidth - 1);
