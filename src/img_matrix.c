@@ -7,8 +7,13 @@
 #include <stdio.h>
 #include <string.h>
 
+// Uncomment those lines to watch the steps in the process of remotion.
+//#define SAVE_TEMPS
+//#define SAVE_FREQUENCY 20
+//#define LOG_REMOTION_STATUS
+
 /* *
- * Matrix:
+ * Matrix representation:
  * 		x = rows (height)
  *		y = columns (width)
  * */
@@ -149,6 +154,10 @@ void mimg_RemoveColumns(MImage mi, int amount) {
 		mi->currentWidth--;
 
 		mimg_SetAllPathsNotChecked(mi);
+
+		#ifdef LOG_REMOTION_STATUS
+		printf("Progress: %d/%d\n", i + 1, amount);
+		#endif
 	}	
 }
 
@@ -212,29 +221,37 @@ static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) {
 
 	if (p->next != NOT_CHECKED_YET) return p->energyInThatPath;
 
-	if (x == mi->currentHeight - 1) return p->energy;
+	if (x == mi->currentHeight - 1) {
+		p->energyInThatPath = p->energy;
+		p->next = LAST_PIXEL;
+	} else {
+		int yPrevious = ml_LimitedUMinus(y, 0);
+		int yNext = ml_LimitedUPlus(y, mi->currentWidth - 1);
 
-	int yPrevious = ml_LimitedUMinus(y, 0);
-	int yNext = ml_LimitedUPlus(y, mi->currentWidth - 1);
+		int xNext = ml_LimitedUPlus(x, mi->currentHeight - 1);
 
-	int xNext = ml_LimitedUPlus(x, mi->currentHeight - 1);
+		int minIndex = 0;
+		float cheapestPath = 0.0f;
 
-	int minIndex = 0;
-	float cheapestPath = 0.0f;
-	for (int j = 0, i = yPrevious; i <= yNext; i++, j++) {
-		float pathCost = mimg_CalculatePathOfPixel(mi, xNext, i);
+		// If it is the first column, it starts analyzing from center.
+		int nextIndex = yPrevious == 0 ? 1 : 0;
 
-		if (i == yPrevious || pathCost < cheapestPath) {
-			minIndex = j;
-			cheapestPath = pathCost;
+		// For each of the below adjacent.
+		for (int i = yPrevious; i <= yNext; i++, nextIndex++) {
+			float pathCost = mimg_CalculatePathOfPixel(mi, xNext, i);
+
+			if (i == yPrevious || pathCost < cheapestPath) {
+				minIndex = nextIndex;
+				cheapestPath = pathCost;
+			}
 		}
+
+		static short paths[3] = { LEFT, CENTER, RIGHT };
+
+		p->next = paths[minIndex];
+
+		p->energyInThatPath = p->energy + cheapestPath;
 	}
-
-	static short paths[3] = { LEFT, CENTER, RIGHT };
-
-	p->next = paths[minIndex];
-
-	p->energyInThatPath = p->energy + cheapestPath;
 
 	return p->energyInThatPath;
 }
@@ -251,13 +268,13 @@ static void mimg_SetPathToPink(MImage mi, int y) {
 
 		switch (pathToFollow) {
 			case LEFT:
-				y = li_LimitedUMinus(y, 0);
+				y = ml_LimitedUMinus(y, 0);
 			break;
 
 			case CENTER: continue;
 
 			case RIGHT:
-				y = li_LimitedUPlus(y, mi->width - 1);
+				y = ml_LimitedUPlus(y, mi->currentWidth - 1);
 			break;
 		}
 	}
@@ -318,8 +335,8 @@ void mimg_Save(MImage mi, const char * fileName) {
 	fprintf(f, "%d %d\n", mi->currentWidth, mi->currentHeight);
 	fprintf(f, "%d\n", mi->maxComponentValue);
 
-	for (int y = 0; y < mi->currentWidth; y++) {
-		for (int x = 0; x < mi->currentHeight; x++) {
+	for (int x = 0; x < mi->currentHeight; x++) {
+		for (int y = 0; y < mi->currentWidth; y++) {
 			pixel p = mi->matrix[INDEX(x, y, mi->allocatedWidth)];
 			fprintf(f, "%d %d %d\n", p.r, p.g, p.b);	
 		}

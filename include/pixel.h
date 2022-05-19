@@ -6,6 +6,7 @@ enum PathOptions {
 	LEFT = -1,
 	CENTER = 0,
 	RIGHT = 1,
+	LAST_PIXEL = 2,
 };
 
 struct pixel_t {

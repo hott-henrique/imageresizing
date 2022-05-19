@@ -13,14 +13,6 @@ $(NAME): $(OBJ)
 obj/%.o: $(SRC_DIR)/%.c
 	$(CC) $(DEFS) -c $(CFLAGS) $< -o $@
 
-.PHONY: clean help
+.PHONY: clean
 clean:
 	rm -f $(OBJ_DIR)/*.o ./$(NAME)
-
-help:
-	@echo "Usages:"
-	@echo "	make"
-	@echo "	make DEFS=YOUR_OPTIONS_HERE"
-	@echo "Options:"
-	@echo "	-DSAVE_TEMPS -DSAVE_FREQUENCY=25"
-	@echo "	-DSOBEL_FELDMAN"
