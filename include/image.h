@@ -12,6 +12,7 @@ Image img_Load(const char * filePath, char mode);
 
 void img_RemoveLines(Image i, int amount);
 void img_RemoveColumns(Image i, int amount);
+void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns);
 
 void img_Save(Image i, const char * fileName);
 

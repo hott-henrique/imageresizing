@@ -67,6 +67,22 @@ void img_RemoveColumns(Image i, int amount) {
 	}
 }
 
+void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns) {
+	switch (i->mode) {
+		case 'M':
+			mimg_RemoveLinesAndColumns(i->representations.M, amountLines, amountColumns);
+			break;
+
+		case 'G':
+			gimg_RemoveLinesAndColumns(i->representations.G, amountLines, amountColumns);
+			break;
+
+		default:
+			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
+			exit(EXIT_FAILURE);
+	}
+}
+
 void img_Save(Image i, const char * fileName) {
 	switch (i->mode) {
 		case 'M':

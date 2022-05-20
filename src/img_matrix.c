@@ -9,8 +9,9 @@
 
 // Uncomment those lines to watch the steps in the process of remotion.
 //#define SAVE_TEMPS
-//#define SAVE_FREQUENCY 20
+//#define SAVE_FREQUENCY 5
 //#define LOG_REMOTION_STATUS
+//#define LOG_DREMOTION_STATUS
 
 /* *
  * Matrix representation:
@@ -30,6 +31,7 @@ static void mimg_SetPixel(int x, int y, pixel p, void * miPtr);
 static void mimg_Transpose(MImage mi);
 
 static int mimg_GetBestPath(MImage mi);
+static float mimg_GetBestPossiblePathValue(MImage mi);
 
 static void mimg_SetAllPathsNotChecked(MImage mi);
 
@@ -78,16 +80,57 @@ void mimg_SetPixel(int x, int y, pixel p, void * miPtr) {
 }
 
 void mimg_RemoveLinesAndColumns(MImage mi, int amountLines, int amountColumns) {
+	#if defined(LOG_DREMOTION_STATUS)
+	int countRemotions = 0;
+	#endif
+
 	while (amountLines != 0 && amountColumns != 0) {
-		// Get best path column value.
-		// Get best path line value.
-		// if column value < line value: remove column && amountColumns--
-		// else: remove line && amountLines--
+		#if defined(LOG_DREMOTION_STATUS)
+		printf("Remotions done: %d | Remaining: %d lines, %d columns\n", countRemotions, amountLines, amountColumns);
+		#endif
+
+		float columnBestPathValue = mimg_GetBestPossiblePathValue(mi);
+
+		mimg_Transpose(mi);
+
+		float lineBestPathValue = mimg_GetBestPossiblePathValue(mi);
+
+		if (lineBestPathValue < columnBestPathValue) {
+			mimg_RemoveColumns(mi, 1);
+			mimg_Transpose(mi);
+			amountLines--;
+		} else {
+			mimg_Transpose(mi);
+			mimg_RemoveColumns(mi, 1);
+			amountColumns--;
+		}
+
+		#if defined(LOG_DREMOTION_STATUS)
+		countRemotions++;
+		#endif
+
 	}
 
-	// Any of these will be 0 so it will just return.
+	#if defined(LOG_DREMOTION_STATUS)
+	printf("Remotions done: %d | Remaining: %d lines, %d columns\n", countRemotions, amountLines, amountColumns);
+	printf("Removing remaining...\n");
+	#endif
+
 	mimg_RemoveLines(mi, amountLines);
 	mimg_RemoveColumns(mi, amountColumns);
+}
+
+static float mimg_GetBestPossiblePathValue(MImage mi) {
+	mimg_CalculateEnergies(mi, 0, mi->currentWidth);
+
+	mimg_CalculatePaths(mi);
+
+	int pathIndex = mimg_GetBestPath(mi);
+	float pathValue = mi->matrix[INDEX(0, pathIndex, mi->currentWidth)].energyInThatPath;
+
+	mimg_SetAllPathsNotChecked(mi);
+
+	return pathValue;
 }
 
 void mimg_RemoveLines(MImage mi, int amount) {
@@ -101,7 +144,6 @@ void mimg_RemoveLines(MImage mi, int amount) {
 }
 
 static void mimg_Transpose(MImage mi) {
-	// Could allocate only what is needed (mi->currentHeight * mi->allocatedWidth) when removing diagonals.
 	Pixel newMatrix = (Pixel) malloc((mi->allocatedHeight * mi->allocatedWidth) * sizeof(pixel));
 
 	for (int y = 0; y < mi->allocatedWidth; y++){
@@ -283,8 +325,8 @@ static void mimg_SetPathToPink(MImage mi, int y) {
 #endif
 
 static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
-	*(outStart) = y;
-	*(outEnd) = y;
+	if (outStart != NULL) *(outStart) = y;
+	if (outEnd != NULL) *(outEnd) = y;
 
 	for (int x = 0; x < mi->currentHeight; x++) {
 		short pathToFollow = mi->matrix[INDEX(x, y, mi->allocatedWidth)].next;	
@@ -294,7 +336,7 @@ static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 		switch (pathToFollow) {
 			case LEFT:
 				y = ml_LimitedUMinus(y, 0);
-				*(outStart) = y;
+				if (outStart != NULL) *(outStart) = y;
 			break;
 
 			case LAST_PIXEL:
@@ -303,7 +345,7 @@ static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 
 			case RIGHT:
 				y = ml_LimitedUPlus(y, mi->currentWidth - 1);
-				*(outEnd) = y;
+				if (outEnd != NULL) *(outEnd) = y;
 			break;
 		}
 	}
