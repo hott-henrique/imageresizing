@@ -146,6 +146,11 @@ static void gimg_SetVPixelReferences(GImage gi, int x, int y) {
 	vpx->adjacent[BR] = &gi->vpixels[indexBR];
 }
 
+void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns) {
+	printf("Call: %s\n", __func__);
+
+}
+
 void gimg_RemoveLines(GImage gi, int amount) {
 	printf("Call: %s\n", __func__);
 

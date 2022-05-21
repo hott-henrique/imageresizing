@@ -19,12 +19,13 @@ int main(int argc, const char ** argv) {
 
 	while (args_Parse(argc, argv));
 
-	//fprintf(stdout, "%s %c %ld %ld\n", filePath, imageMode, linesToRemove, columnsToRemove);
+	fprintf(stdout, "%s %c %ld %ld\n", filePath, imageMode, linesToRemove, columnsToRemove);
 
 	Image i = img_Load(filePath, imageMode);
 
 	if (linesToRemove != 0 && columnsToRemove != 0) {
 	// Pediu para remover linhas e colunas.	
+		img_RemoveLinesAndColumns(i, linesToRemove, columnsToRemove);
 	} else if (linesToRemove != 0) {
 	// Pediu para remover apenas linhas.
 		img_RemoveLines(i, linesToRemove);
