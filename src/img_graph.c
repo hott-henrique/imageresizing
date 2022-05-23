@@ -197,9 +197,6 @@ void gimg_RemoveColumns(GImage gi, int amount) {
 
 		gimg_RemovePath(gi, index, &start, &end);
 
-		start = ml_LimitedUMinus(start, 0);
-		end = ml_LimitedUPlus(end, gi->currentHeight - 1);
-
 		gi->currentWidth--;
 
 		gimg_SetAllPathsNotChecked(gi);
@@ -232,14 +229,14 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y) {
 }
 
 static void gimg_CalculatePaths(GImage gi) {
-	printf("Call: %s\n", __func__);
+	//printf("Call: %s\n", __func__);
 	for (int x = 0; x < gi->currentHeight; x++){ 
 		gimg_CalculateAllPathsInLine(gi, x);
 	}
 }
 
 static void gimg_CalculateAllPathsInLine(GImage gi, int x) {
-	printf("Call: %s\n", __func__);
+	//printf("Call: %s\n", __func__);
 	// Funct to calc path of each pixel
 	for (int y = 0; y < gi->currentWidth; y++) {
 		gmig_CalculatePathOfPixel(gi, x, y);
@@ -248,7 +245,7 @@ static void gimg_CalculateAllPathsInLine(GImage gi, int x) {
 }
 
 static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
-	printf("Call: %s\n", __func__);
+	//printf("Call: %s\n", __func__);
 	
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel p = &gi->vpixels[index];
@@ -266,7 +263,7 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 	for (int adjacentIndex = TL; adjacentIndex <= TR; adjacentIndex++) {
 		float pathCost = p->adjacent[adjacentIndex]->px.energyInThatPath;
 
-		if (adjacent == TL || pathCost < cheapestPath) {
+		if (adjacentIndex == TL || pathCost < cheapestPath) {
 			cheapestPath = pathCost;
 			minIndex = adjacentIndex;
 		} 
@@ -275,18 +272,18 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 	static short paths[3] = { LEFT, CENTER, RIGHT };
 	
 	p->px.next = paths[minIndex];
-	
+
 	p->px.energyInThatPath = cheapestPath;
 }
 
 static int gimg_GetBestPath(GImage gi) {
-	printf("Call: %s\n", __func__);
+	//printf("Call: %s\n", __func__);
 
 	int minIndex = 0;
 
 	for (int y = 1; y < gi->currentWidth; y++) {
-		int indexMinEnergyAdjacent = INDEX(0, minIndex, gi->allocatedWidth);
-		int indexCurrentEnergyAdjacent = INDEX(0, y, gi->allocatedWidth);
+		int indexMinEnergyAdjacent = INDEX(gi->currentHeight, minIndex, gi->allocatedWidth);
+		int indexCurrentEnergyAdjacent = INDEX(gi->currentHeight, y, gi->allocatedWidth);
 
 		float minEnergy = gi->vpixels[indexMinEnergyAdjacent].px.energyInThatPath;
 		float currentEnergy = gi->vpixels[indexCurrentEnergyAdjacent].px.energyInThatPath;
@@ -301,55 +298,55 @@ static int gimg_GetBestPath(GImage gi) {
 }
 
 static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
-	printf("Call: %s\n", __func__);
-	// Inicializar meu range 
-	// Percorrer todas as minhas linhas
-	// Guardar a referencia do proximo dele e dps remover o meu pixel
-	// Escolher pelo pathtofollow em qual direção seguir
-
+	//printf("Call: %s\n", __func__);
+	
 	*(outStart) = y;
 	*(outEnd) = y;
 
-	for (int x = 0; x < gi->currentHeight; x++) {
+	for (int x = gi->currentHeight; x >= 0; x--) {
+
 		int index = INDEX(x, y, gi->allocatedWidth);
-		short pathToFollow = gi->vpixels[index].px.next; // ???????????????? 
-		
+		VPixel p = &gi->vpixels[index];
+
+		int pathToFollow = p->px.next;
+
 		gimg_RemovePixel(gi, x, y);
 
 		switch (pathToFollow) {
 			case LEFT:
 				y = ml_LimitedUMinus(y, 0);
 				*(outStart) = y;
-			break;
+				break;
 
 			case LAST_PIXEL:
-			case CENTER:
-				continue;
+			case CENTER:	
+				break;
 
 			case RIGHT:
 				y = ml_LimitedUPlus(y, gi->currentWidth - 1);
 				*(outEnd) = y;
-			break;
+				break;
 		}
+
 	}
 
 }
 
 static void gimg_RemovePixel(GImage gi, int x, int y) {
-	printf("Call: %s\n", __func__);
+	//printf("Call: %s\n", __func__);
 
 	size_t n = gi->currentWidth - y - 1;
 
 	//gicpy(GImage gi, int x, int y, size_t n); - Funct to copy grath
-	for (size_t column = 0; column < n; column++) {
+	for (size_t column = y; column < n; column++) {
 		int index = INDEX(x, y, gi->allocatedWidth);
 		VPixel p = &gi->vpixels[index];
 
-		p->px.r = p->adjacent[2]->px.r;
-		p->px.g = p->adjacent[2]->px.g;
-		p->px.b = p->adjacent[2]->px.b;
+		p->px.r = p->adjacent[3]->px.r;
+		p->px.g = p->adjacent[3]->px.g;
+		p->px.b = p->adjacent[3]->px.b;
 
-		p->px.li = p->adjacent[2]->px.li;
+		p->px.li = p->adjacent[3]->px.li;
 
 		y++;
 	}
