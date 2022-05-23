@@ -6,7 +6,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#define INDEX_ADJ(x) (x + 3)
+#define INDEX_ADJ(x) (x + 2)
 
 // Path to remove a column:
 // Load image in grath
@@ -55,6 +55,8 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y);
 static void gimg_CalculatePaths(GImage gi);
 static void gmig_CalculatePathOfPixel(GImage, int x, int y);
 static int gimg_GetBestPath(GImage gi);
+
+//static void gicpy(GImage gi, int y, VPixel p, size_t n);
 
 static void gimg_RemovePath(GImage gi, int index, int * start, int * end);
 static void gimg_RemovePixel(GImage gi, int x, int y);
@@ -239,8 +241,9 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 	// Coloco o adjacente no proximo e caminho ate o final da coluna
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel p = &gi->vpixels[index];
+	VPixel initialP = p;
 
-	float cheapestPath = p->px.energy;
+	float cheapestPath = initialP->px.energy;
 
 	for (int line = 0; line < gi->currentHeight - 1; line++) {
 
@@ -250,32 +253,37 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 		int xNext = ml_LimitedUPlus(x, gi->currentHeight - 1);
 
 		if (xNext == x) {
-			p->px.energyInThatPath = cheapestPath;
+			initialP->px.energyInThatPath = cheapestPath;
 			return;
 		}
 
-		// INDEX_ADJ(x + 3) -> adjacent index in list
-		int minIndex = 3;
+		int minIndex = 5;
 		int pathCost = 0;
 
-		for (int bottomAdjacentIndex = 0; bottomAdjacentIndex <= 2; bottomAdjacentIndex++) {
+		for (int bottomAdjacentIndex = 0; bottomAdjacentIndex < 2; bottomAdjacentIndex++) {
 
-			if (yPrevious == y) {
-				bottomAdjacentIndex++;
+			if (yPrevious == y && bottomAdjacentIndex == 0) {
 				minIndex--;
+				continue;
 			}
 
-			if (minIndex == bottomAdjacentIndex) {
-				int indexOfNextAdjacent = INDEX_ADJ(bottomAdjacentIndex);
-				pathCost = p->adjacent[indexOfNextAdjacent]->px.energy; 
-			} else {
-				float energyAdjacentAuxiliar = p->adjacent[INDEX_ADJ(bottomAdjacentIndex)]->px.energy;
-				if(energyAdjacentAuxiliar < pathCost){
-					minIndex++;
-					pathCost = energyAdjacentAuxiliar;
-				}
+			if (yNext == y && bottomAdjacentIndex == 0) {
+				continue;
 			}
+
+			pathCost = p->adjacent[minIndex]->px.energy;
+
+			float energyAdjacentAuxiliar = p->adjacent[index - 1]->px.energy;
+			if(energyAdjacentAuxiliar < pathCost){
+				minIndex--;
+				pathCost = energyAdjacentAuxiliar;
+			}
+			
 		}
+
+		static short paths[3] = { RIGHT, CENTER, LEFT };
+
+		p->px.next = paths[minIndex - 3];
 
 		p = p->adjacent[minIndex];
 
@@ -312,32 +320,26 @@ static void gimg_RemovePath(GImage gi, int index, int * start, int * end) {
 	// Guardar a referencia do proximo dele e dps remover o meu pixel
 	// Escolher pelo pathtofollow em qual direção seguir
 
-	for (int ) {
-
-	}
 
 }
 
-static void gicpy(GImage gi, VPixel p, ) {
-	for (int column = 0; column < n; column++) {
+static void gimg_RemovePixel(GImage gi, int x, int y) {
+
+	size_t n = gi->currentWidth - y - 1;
+
+	//gicpy(GImage gi, int x, int y, size_t n); - Funct to copy grath
+	for (size_t column = 0; column < n; column++) {
+		int index = INDEX(x, y, gi->allocatedWidth);
+		VPixel p = &gi->vpixels[index];
+
 		p->px.r = p->adjacent[2]->px.r;
 		p->px.g = p->adjacent[2]->px.g;
 		p->px.b = p->adjacent[2]->px.b;
 
-		index = INDEX(x, y + 1, gi->allocatedWidth);
-		p = &gi->vpixels[index];
+		y++;
 	}
 
 	gi->currentWidth--;
-}
-
-static void gimg_RemovePixel(GImage gi, int x, int y) {
-	int index = INDEX(x, y, gi->allocatedWidth);
-	VPixel p = &gi->vpixels[index];
-
-	size_t n = gi->currentWidth - y - 1;
-
-	gicpy(GImage gi, VPixel currentPixel,);
 
 }
 
