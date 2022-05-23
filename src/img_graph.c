@@ -183,6 +183,7 @@ static void gimg_Transpose(GImage gi) {
 
 void gimg_RemoveColumns(GImage gi, int amount) {
 	printf("Call: %s\n", __func__);
+
 	int start = 0;
 	int end = gi->allocatedWidth - 1;
 
@@ -205,6 +206,8 @@ void gimg_RemoveColumns(GImage gi, int amount) {
 }
 
 static void gimg_CalculateEnergies(GImage gi, int start, int end) {
+	printf("Call: %s\n", __func__);
+
 	for (int y = start; y <= end; y++) {
 		for (int x = 0; x < gi->currentHeight; x++) {
 			gimg_CalculateEnergy(gi, x, y);
@@ -213,6 +216,8 @@ static void gimg_CalculateEnergies(GImage gi, int start, int end) {
 }
 
 static void gimg_CalculateEnergy(GImage gi, int x, int y) {
+	printf("Call: %s\n", __func__);
+
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel center = &gi->vpixels[index];
 	VPixel * adjacent = center->adjacent;
@@ -227,12 +232,14 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y) {
 }
 
 static void gimg_CalculatePaths(GImage gi) {
+	printf("Call: %s\n", __func__);
 	for (int y = 0; y < gi->currentWidth; y++){
 		gmig_CalculatePathOfPixel(gi, 0, y);
 	}
 }
 
 static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
+	printf("Call: %s\n", __func__);
 	// Pegar o pixel analisado
 	// Crio variaveis para o caminho mais barato para ser armazenado dps no pixel
 	// Confiro se o pixel esta em alguma borda ou se é a ultima linha
@@ -314,16 +321,43 @@ static int gimg_GetBestPath(GImage gi) {
 
 }
 
-static void gimg_RemovePath(GImage gi, int index, int * start, int * end) {
+static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
+	printf("Call: %s\n", __func__);
 	// Inicializar meu range 
 	// Percorrer todas as minhas linhas
 	// Guardar a referencia do proximo dele e dps remover o meu pixel
 	// Escolher pelo pathtofollow em qual direção seguir
 
+	*(outStart) = y;
+	*(outEnd) = y;
+
+	for (int x = 0; x < gi->currentHeight; x++) {
+		int index = INDEX(x, y, gi->allocatedWidth);
+		short pathToFollow = gi->vpixels[index]->px.next;	
+		
+		gimg_RemovePixel(gi, x, y);
+
+		switch (pathToFollow) {
+			case LEFT:
+				y = ml_LimitedUMinus(y, 0);
+				*(outStart) = y;
+			break;
+
+			case LAST_PIXEL:
+			case CENTER:
+				continue;
+
+			case RIGHT:
+				y = ml_LimitedUPlus(y, gi->currentWidth - 1);
+				*(outEnd) = y;
+			break;
+		}
+	}
 
 }
 
 static void gimg_RemovePixel(GImage gi, int x, int y) {
+	printf("Call: %s\n", __func__);
 
 	size_t n = gi->currentWidth - y - 1;
 
@@ -336,16 +370,23 @@ static void gimg_RemovePixel(GImage gi, int x, int y) {
 		p->px.g = p->adjacent[2]->px.g;
 		p->px.b = p->adjacent[2]->px.b;
 
+		p->px.li = p->adjacent[2]->px.li;
+
 		y++;
 	}
-
-	gi->currentWidth--;
 
 }
 
 static void gimg_SetAllPathsNotChecked(GImage gi) {
 	printf("Call: %s\n", __func__);
 
+	for (int y = 0; y < gi->currentWidth; y++) {
+		for (int x = 0; x < gi->currentHeight; x++) {
+			int index = INDEX(x, y, gi->allocatedWidth);
+			VPixel p = &gi->vpixels[index];
+			p->px.next = NOT_CHECKED_YET;
+		}
+	}
 }
 
 void gimg_Save(GImage gi, const char * fileName) {
