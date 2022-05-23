@@ -232,15 +232,15 @@ static void gimg_CalculatePaths(GImage gi) {
 
 static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 	// Pegar o pixel analisado
-	// Crio variaveis para o caminho mais parato para ser armazenado dps no pixel
+	// Crio variaveis para o caminho mais barato para ser armazenado dps no pixel
 	// Confiro se o pixel esta em alguma borda ou se é a ultima linha
-	// Olho os tres adjacentes de baixo dele
+	// Olho os tres adjacentes abaixo dele
 	// Decido qual pegar
 	// Coloco o adjacente no proximo e caminho ate o final da coluna
 	int index = INDEX(x, y, gi->allocatedWidth);
-	Pixel p = &gi->vpixels[index];
+	VPixel p = &gi->vpixels[index];
 
-	float cheapestPath = p->energy;
+	float cheapestPath = p->px.energy;
 
 	for (int line = 0; line < gi->currentHeight - 1; line++) {
 
@@ -250,13 +250,14 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 		int xNext = ml_LimitedUPlus(x, gi->currentHeight - 1);
 
 		if (xNext == x) {
-			p->energyInThatPath = cheapestPath;
+			p->px.energyInThatPath = cheapestPath;
 			return;
 		}
 
 		// INDEX_ADJ(x + 3) -> adjacent index in list
 		int minIndex = 3;
 		int pathCost = 0;
+
 		for (int bottomAdjacentIndex = 0; bottomAdjacentIndex <= 2; bottomAdjacentIndex++) {
 
 			if (yPrevious == y) {
@@ -265,9 +266,10 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 			}
 
 			if (minIndex == bottomAdjacentIndex) {
-				pathCost = p->adjacent[INDEX_ADJ(bottomAdjacentIndex)]->energy; 
+				int indexOfNextAdjacent = INDEX_ADJ(bottomAdjacentIndex);
+				pathCost = p->adjacent[indexOfNextAdjacent]->px.energy; 
 			} else {
-				float energyAdjacentAuxiliar = p->adjacent[INDEX_ADJ(bottomAdjacentIndex)]->energy;
+				float energyAdjacentAuxiliar = p->adjacent[INDEX_ADJ(bottomAdjacentIndex)]->px.energy;
 				if(energyAdjacentAuxiliar < pathCost){
 					minIndex++;
 					pathCost = energyAdjacentAuxiliar;
@@ -280,7 +282,6 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 		cheapestPath += pathCost;
 	}
 
-	p->
 	
 }
 
@@ -288,9 +289,13 @@ static int gimg_GetBestPath(GImage gi) {
 	printf("Call: %s\n", __func__);
 
 	int minIndex = 0;
+
 	for (int y = 1; y < gi->currentWidth; y++) {
-		float minEnergy = gi->vpixels[INDEX(0, minIndex, gi->allocatedWidth)].energyInThatPath;
-		float currentEnergy = gi->vpixels[INDEX(0, y, gi->allocatedWidth)].energyInThatPath;
+		int indexMinEnergyAdjacent = INDEX(0, minIndex, gi->allocatedWidth);
+		int indexCurrentEnergyAdjacent = INDEX(0, y, gi->allocatedWidth);
+
+		float minEnergy = gi->vpixels[indexMinEnergyAdjacent].px.energyInThatPath;
+		float currentEnergy = gi->vpixels[indexCurrentEnergyAdjacent].px.energyInThatPath;
 
 		if (currentEnergy < minEnergy) {
 			minIndex = y;
@@ -307,17 +312,33 @@ static void gimg_RemovePath(GImage gi, int index, int * start, int * end) {
 	// Guardar a referencia do proximo dele e dps remover o meu pixel
 	// Escolher pelo pathtofollow em qual direção seguir
 
+	for (int ) {
+
+	}
+
 }
 
-static void gimg_RemovePixel(GImage gi, int x, int y) {
-	int index = INDEX(x, y, gi->alocattedWidth);
-	Pixel p = &gi->vpixels[index];
+static void gicpy(GImage gi, VPixel p, ) {
+	for (int column = 0; column < n; column++) {
+		p->px.r = p->adjacent[2]->px.r;
+		p->px.g = p->adjacent[2]->px.g;
+		p->px.b = p->adjacent[2]->px.b;
 
-	for (int y = 0; y < gi->currentWidth; y++) {
-		p->px.li = p->adjacent[2]->px.li;
+		index = INDEX(x, y + 1, gi->allocatedWidth);
+		p = &gi->vpixels[index];
 	}
 
 	gi->currentWidth--;
+}
+
+static void gimg_RemovePixel(GImage gi, int x, int y) {
+	int index = INDEX(x, y, gi->allocatedWidth);
+	VPixel p = &gi->vpixels[index];
+
+	size_t n = gi->currentWidth - y - 1;
+
+	gicpy(GImage gi, VPixel currentPixel,);
+
 }
 
 static void gimg_SetAllPathsNotChecked(GImage gi) {
