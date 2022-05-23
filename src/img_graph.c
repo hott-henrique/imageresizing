@@ -333,7 +333,7 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 
 	for (int x = 0; x < gi->currentHeight; x++) {
 		int index = INDEX(x, y, gi->allocatedWidth);
-		short pathToFollow = gi->vpixels[index]->px.next;	
+		short pathToFollow = gi->vpixels[index].px.next; // ???????????????? 
 		
 		gimg_RemovePixel(gi, x, y);
 
