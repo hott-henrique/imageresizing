@@ -52,6 +52,8 @@ static void gimg_Transpose(GImage gi);
 static void gimg_CalculateEnergies(GImage gi, int start, int end);
 static void gimg_CalculateEnergy(GImage gi, int x, int y);
 
+//static void gimg_PaintPathToPink(GImage gi, int x, int y);
+
 static void gimg_CalculatePaths(GImage gi);
 static void gimg_CalculateAllPathsInLine(GImage gi, int x);
 static void gmig_CalculatePathOfPixel(GImage, int x, int y);
@@ -197,6 +199,9 @@ void gimg_RemoveColumns(GImage gi, int amount) {
 
 		gimg_RemovePath(gi, index, &start, &end);
 
+		// start = ml_LimitedUMinus(start, 0);
+		// end = ml_LimitedUPlus(end, gi->currentWidth - 1);
+
 		gi->currentWidth--;
 
 		gimg_SetAllPathsNotChecked(gi);
@@ -312,6 +317,7 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 		int pathToFollow = p->px.next;
 
 		gimg_RemovePixel(gi, x, y);
+		//gimg_PaintPathToPink(gi, x, y);
 
 		switch (pathToFollow) {
 			case LEFT:
@@ -333,10 +339,21 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 
 }
 
+// static void gimg_PaintPathToPink(GImage gi, int x, int y) {
+
+// 	int index = INDEX(x, y, gi->allocatedWidth);
+//  	VPixel p = &gi->vpixels[index];
+
+// 	p->px.r = 255;
+// 	p->px.r = 0;
+// 	p->px.r = 255;
+	
+// }
+
 static void gimg_RemovePixel(GImage gi, int x, int y) {
 	//printf("Call: %s\n", __func__);
 
-	size_t n = gi->currentWidth - y - 1;
+	size_t n = gi->currentWidth;
 
 	//gicpy(GImage gi, int x, int y, size_t n); - Funct to copy grath
 	for (size_t column = y; column < n; column++) {
