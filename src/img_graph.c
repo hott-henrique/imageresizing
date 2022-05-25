@@ -307,8 +307,8 @@ static int gimg_GetBestPath(GImage gi) {
 static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 	//printf("Call: %s\n", __func__);
 	
-	//*(outStart) = y;
-	//*(outEnd) = y;
+	*(outStart) = y;
+	*(outEnd) = y;
 
 	for (int x = 0; x < gi->currentHeight; x++) {
 
@@ -323,7 +323,9 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 		switch (pathToFollow) {
 			case LEFT:
 				y = ml_LimitedUMinus(y, 0);
-				//*(outStart) = y;
+				if (y < *(outStart)) {
+					*(outStart) = y;
+				}
 				break;
 
 			case LAST_PIXEL:
@@ -333,7 +335,9 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 
 			case RIGHT:
 				y = ml_LimitedUPlus(y, gi->currentWidth - 1);
-				//*(outEnd) = y;
+				if (y > *(outEnd)) {
+					*(outEnd) = y;
+				}
 				break;
 		}
 
