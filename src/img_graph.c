@@ -2,6 +2,7 @@
 #include "pixel.h"
 #include "ppm.h"
 #include "mlimits.h"
+#include "glimits.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -56,7 +57,7 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y);
 
 static void gimg_CalculatePaths(GImage gi);
 static void gimg_CalculateAllPathsInLine(GImage gi, int x);
-static void gmig_CalculatePathOfPixel(GImage, int x, int y);
+static void gimg_CalculatePathOfPixel(GImage, int x, int y);
 static int gimg_GetBestPath(GImage gi);
 
 //static void gicpy(GImage gi, int y, VPixel p, size_t n);
@@ -245,12 +246,12 @@ static void gimg_CalculateAllPathsInLine(GImage gi, int x) {
 	//printf("Call: %s\n", __func__);
 	// Funct to calc path of each pixel
 	for (int y = 0; y < gi->currentWidth; y++) {
-		gmig_CalculatePathOfPixel(gi, x, y);
+		gimg_CalculatePathOfPixel(gi, x, y);
 	}	
 
 }
 
-static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
+static void gimg_CalculatePathOfPixel(GImage gi, int x, int y) {
 	//printf("Call: %s\n", __func__);
 
 	int index = INDEX(x, y, gi->allocatedWidth);
@@ -323,9 +324,7 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 		switch (pathToFollow) {
 			case LEFT:
 				y = ml_LimitedUMinus(y, 0);
-				if (y < *(outStart)) {
-					*(outStart) = y;
-				}
+				*(outStart) = gl_LimitedUMinus(y, *(outStart));
 				break;
 
 			case LAST_PIXEL:
@@ -335,9 +334,7 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 
 			case RIGHT:
 				y = ml_LimitedUPlus(y, gi->currentWidth - 1);
-				if (y > *(outEnd)) {
-					*(outEnd) = y;
-				}
+				*(outEnd) = gl_LimitedUPlus(y, *(outEnd));
 				break;
 		}
 
