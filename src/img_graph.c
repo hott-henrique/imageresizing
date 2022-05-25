@@ -32,13 +32,13 @@ struct img_graph_t {
 };
 
 enum AdjacentIndices {
-	TL = 0,
-	T = 1,
-	TR = 2,
+	TL = 6,
+	T = 5,
+	TR = 4,
 	R = 3,
-	BR = 4,
-	B = 5,
-	BL = 6,
+	BR = 2,
+	B = 1,
+	BL = 0,
 	L = 7,
 };
 
@@ -199,8 +199,8 @@ void gimg_RemoveColumns(GImage gi, int amount) {
 
 		gimg_RemovePath(gi, index, &start, &end);
 
-		// start = ml_LimitedUMinus(start, 0);
-		// end = ml_LimitedUPlus(end, gi->currentWidth - 1);
+		//start = ml_LimitedUMinus(start, 0);
+		//end = ml_LimitedUPlus(end, gi->currentWidth - 1);
 
 		gi->currentWidth--;
 
@@ -235,7 +235,8 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y) {
 
 static void gimg_CalculatePaths(GImage gi) {
 	//printf("Call: %s\n", __func__);
-	for (int x = 0; x < gi->currentHeight; x++){ 
+	int currentHeight = gi->currentHeight - 1;
+	for (int x = currentHeight; x >= 0; x--){ 
 		gimg_CalculateAllPathsInLine(gi, x);
 	}
 }
@@ -251,11 +252,12 @@ static void gimg_CalculateAllPathsInLine(GImage gi, int x) {
 
 static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 	//printf("Call: %s\n", __func__);
-	
+
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel p = &gi->vpixels[index];
 
-	if(0 == x) {
+	int currentHeight = gi->currentHeight - 1;
+	if (currentHeight == x) {
 		p->px.energyInThatPath = p->px.energy;
 		p->px.next = LAST_PIXEL;
 		return;
@@ -265,10 +267,10 @@ static void gmig_CalculatePathOfPixel(GImage gi, int x, int y) {
 
 	float cheapestPath = 0.0f;
 
-	for (int adjacentIndex = TL; adjacentIndex <= TR; adjacentIndex++) {
+	for (int adjacentIndex = BL; adjacentIndex <= BR; adjacentIndex++) {
 		float pathCost = p->adjacent[adjacentIndex]->px.energyInThatPath;
 
-		if (adjacentIndex == TL || pathCost < cheapestPath) {
+		if (adjacentIndex == BL || pathCost < cheapestPath) {
 			cheapestPath = pathCost;
 			minIndex = adjacentIndex;
 		} 
@@ -287,9 +289,8 @@ static int gimg_GetBestPath(GImage gi) {
 	int minIndex = 0;
 
 	for (int y = 1; y < gi->currentWidth; y++) {
-		int x = gi->currentHeight - 1;
-		int indexMinEnergyAdjacent = INDEX(x, minIndex, gi->allocatedWidth); //??????
-		int indexCurrentEnergyAdjacent = INDEX(x, y, gi->allocatedWidth);
+		int indexMinEnergyAdjacent = INDEX(0, minIndex, gi->allocatedWidth); 
+		int indexCurrentEnergyAdjacent = INDEX(0, y, gi->allocatedWidth);
 
 		float minEnergy = gi->vpixels[indexMinEnergyAdjacent].px.energyInThatPath;
 		float currentEnergy = gi->vpixels[indexCurrentEnergyAdjacent].px.energyInThatPath;
@@ -306,10 +307,10 @@ static int gimg_GetBestPath(GImage gi) {
 static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 	//printf("Call: %s\n", __func__);
 	
-	*(outStart) = y;
-	*(outEnd) = y;
+	//*(outStart) = y;
+	//*(outEnd) = y;
 
-	for (int x = gi->currentHeight - 1; x >= 0; x--) {
+	for (int x = 0; x < gi->currentHeight; x++) {
 
 		int index = INDEX(x, y, gi->allocatedWidth);
 		VPixel p = &gi->vpixels[index];
@@ -322,16 +323,17 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 		switch (pathToFollow) {
 			case LEFT:
 				y = ml_LimitedUMinus(y, 0);
-				*(outStart) = y;
+				//*(outStart) = y;
 				break;
 
 			case LAST_PIXEL:
-			case CENTER:	
 				break;
+			case CENTER:	
+				continue;
 
 			case RIGHT:
 				y = ml_LimitedUPlus(y, gi->currentWidth - 1);
-				*(outEnd) = y;
+				//*(outEnd) = y;
 				break;
 		}
 
