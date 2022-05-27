@@ -14,20 +14,20 @@ float Gy[3][3] = { { +3, -10, +3 }, {   0, 0,   0 }, { -3, -10, -3 } };
 
 static float px_ApplyWeigths(float liRegion[3][3], float weigths[3][3]);
 
-void px_CalculateLI(Pixel p) {
+void px_CalculateLI(Pixel p) { // O(1)
 	p->li = 0.30 * p->r + 0.59 * p->g + 0.11 * p->b;
 }
 
-float px_CalculateEnergy(float liRegion[3][3]) {
+float px_CalculateEnergy(float liRegion[3][3]) { // O(1)
 	float gx = px_ApplyWeigths(liRegion, Gx);
 	float gy = px_ApplyWeigths(liRegion, Gy);
 	return sqrtf((gx * gx) + (gy * gy));	
 }
 
-float px_ApplyWeigths(float liRegion[3][3], float weigths[3][3]) {
+float px_ApplyWeigths(float liRegion[3][3], float weigths[3][3]) { // O(1)
 	float result = 0.0f;
-	for (int i = 0; i < 3; i++) {
-		for (int j = 0; j < 3; j++) {
+	for (int i = 0; i < 3; i++) { // 3
+		for (int j = 0; j < 3; j++) { // 3
 			result += liRegion[i][j] * weigths[i][j];
 		}
 	}

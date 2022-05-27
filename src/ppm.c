@@ -5,9 +5,9 @@
 #include <math.h>
 #include <string.h>
 
-void ppm_GetProperties(const char * filePath, int * outWidth, int * outHeight, int * outMaxComponentValue) {
+void ppm_GetProperties(const char * filePath, int * outWidth, int * outHeight, int * outMaxComponentValue) { // O(n)
 	FILE * f = fopen(filePath, "r");
-	if (NULL == f) {
+	if (NULL == f) { // 1
 		fprintf(stderr, "Could not open file: %s\n", filePath);
 		exit(EXIT_FAILURE);
 	}
@@ -20,22 +20,22 @@ void ppm_GetProperties(const char * filePath, int * outWidth, int * outHeight, i
 
 	// Se a linha é um comentario, ignore.
 	// E repita enquanto houver mais comentarios.
-	while (line[0] == '#') fgets(line, sizeof(line), f);
+	while (line[0] == '#') fgets(line, sizeof(line), f); // O(n)
 
 	// A próxima linha que tem um real significado vai ser a que indica altura e largura da imagem.
 	sscanf(line, "%d %d", outWidth, outHeight);
 
 	fgets(line, sizeof(line), f);
-	while (line[0] == '#') fgets(line, sizeof(line), f);
+	while (line[0] == '#') fgets(line, sizeof(line), f); // O(n)
 
 	sscanf(line, "%d", outMaxComponentValue);
 
 	fclose(f);
 }
 
-void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
+void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) { // max(O(n^2)O(n)) -> O(n^2)
 	FILE * file = fopen(filePath, "r");
-	if (NULL == file) {
+	if (NULL == file) { // 1
 		fprintf(stderr, "Could not open file: %s\n", "example.ppm");
 		exit(EXIT_FAILURE);
 	}
@@ -46,23 +46,23 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 
 	// Ignore comments between signature and properties of file.
 	fgets(line, sizeof(line), file);
-	while (line[0] == '#') fgets(line, sizeof(line), file);
+	while (line[0] == '#') fgets(line, sizeof(line), file); // O(n)
 
 	int width, height;
 	sscanf(line, "%d %d", &width, &height);
 
 	// Ignore comments between properties and max component value.
 	fgets(line, sizeof(line), file);
-	while (line[0] == '#') fgets(line, sizeof(line), file);
+	while (line[0] == '#') fgets(line, sizeof(line), file); // O(n)
 
 	int maxComponentValue = 0;
 	sscanf(line, "%d", &maxComponentValue);
 
-	int maxValueLen = maxComponentValue > 0 ? floor(log10(abs(maxComponentValue))) + 1 : 1;
+	int maxValueLen = maxComponentValue > 0 ? floor(log10(abs(maxComponentValue))) + 1 : 1; // 1
 
 	// Ignore comments between max value and first line with pixels
 	fgets(line, sizeof(line), file);
-	while (line[0] == '#') fgets(line, sizeof(line), file);
+	while (line[0] == '#') fgets(line, sizeof(line), file); // O(n)
 
 	short component = 0;
 
@@ -76,11 +76,11 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 
 	pixel p = { .r = -1, .g = -1, .b = -1 };
 
-	while (1) {
+	while (1) { // O(n^2)
 		int lineLength = strlen(lineRef);
 
 		short bHasFoundComponent = 0;
-		for (int i = 0; i < lineLength && !bHasFoundComponent; i++) {
+		for (int i = 0; i < lineLength && !bHasFoundComponent; i++) { // O(4n)
 			char c = lineRef[i];
 			int cCode = (int)(c);
 
@@ -90,7 +90,7 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 				bHasFoundComponent = 1;
 
 				int j = 0;
-				for (; j < maxValueLen; j++) {
+				for (; j < maxValueLen; j++) { // 4
 					char d = lineRef[i + j];
 					int dCode = (int)(d);
 
@@ -110,7 +110,7 @@ void ppm_ForEachPixel(const char * filePath, pixelCallback, void * structData) {
 
 			if (OK == NULL) return;
 
-			while (line[0] == '#') fgets(line, sizeof(line), file);
+			while (line[0] == '#') fgets(line, sizeof(line), file); // O(n)
 
 			if (OK == NULL) return; // Case last line is a comment.
 
