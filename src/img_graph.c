@@ -1,45 +1,35 @@
 #include "img_graph.h"
+
 #include "pixel.h"
 #include "ppm.h"
 #include "mlimits.h"
-#include "glimits.h"
 
 #include <stdlib.h>
 #include <stdio.h>
 
-#define INDEX_ADJ(x) (x + 2)
-
-// Path to remove a column:
-// Load image in grath
-// Calculate intensity of pixels
-// Calculate energy of pixels
-// For each width pixel, calculate the path to follow
-// Remove pixel of line and go to next
-// Remove all pixels of column
-
 struct vpixel_t {
 	pixel px;
-	struct vpixel_t ** adjacent; // array of references (pointers).
+	struct vpixel_t ** adjacent;
 };
 
 typedef struct vpixel_t vpixel;
 typedef vpixel * VPixel;
 
 struct img_graph_t {
-	int currentWidth, currentHeight;// The width and height arent fixeds 
+	int currentWidth, currentHeight; 
 	int allocatedWidth, allocatedHeight; 
 	int maxComponentValue;
-	VPixel vpixels; // array of pixels 
+	VPixel vpixels;
 };
 
 enum AdjacentIndices {
-	TL = 6,
-	T = 5,
-	TR = 4,
-	R = 3,
-	BR = 2,
-	B = 1,
 	BL = 0,
+	B = 1,
+	BR = 2,
+	R = 3,
+	TR = 4,
+	T = 5,
+	TL = 6,
 	L = 7,
 };
 
@@ -50,26 +40,21 @@ static void gimg_SetVPixelReferences(GImage gi, int x, int y);
 
 static void gimg_Transpose(GImage gi);
 
-static void gimg_CalculateEnergies(GImage gi, int start, int end);
+static void gimg_CalculateEnergies(GImage gi);
 static void gimg_CalculateEnergy(GImage gi, int x, int y);
-
-//static void gimg_PaintPathToPink(GImage gi, int x, int y);
 
 static void gimg_CalculatePaths(GImage gi);
 static void gimg_CalculateAllPathsInLine(GImage gi, int x);
 static void gimg_CalculatePathOfPixel(GImage, int x, int y);
+
 static int gimg_GetBestPath(GImage gi);
 
-//static void gicpy(GImage gi, int y, VPixel p, size_t n);
-
-static void gimg_RemovePath(GImage gi, int index, int * start, int * end);
+static void gimg_RemovePath(GImage gi, int index);
 static void gimg_RemovePixel(GImage gi, int x, int y);
 
-static void gimg_SetAllPathsNotChecked(GImage gi);
+static float gimg_GetBestPossiblePathValue(GImage gi);
 
 GImage gimg_Load(const char * filePath) {
-	printf("Call: %s\n", __func__);
-
 	GImage gi = (GImage) malloc(sizeof(struct img_graph_t));
 
 	ppm_GetProperties(filePath, &gi->allocatedWidth, &gi->allocatedHeight, &gi->maxComponentValue);
@@ -84,30 +69,13 @@ GImage gimg_Load(const char * filePath) {
 			int index = INDEX(x, y, gi->allocatedWidth);
 
 			VPixel vp = &gi->vpixels[index];
-			vp->adjacent = (VPixel *) malloc(sizeof(VPixel) * 8); // alocatted array size 8 of pixels adjacents
+			vp->adjacent = (VPixel *) malloc(sizeof(VPixel) * 8);
 		}
 	}
 
 	ppm_ForEachPixel(filePath, gimg_SetPixel, gi);
 
 	gimg_SetAllReferences(gi);
-
-	//for (int x = 0; x < gi->currentHeight; x++) {
-	//	for (int y = 0; y < gi->currentWidth; y++) {
-	//		VPixel center = &gi->vpixels[INDEX(x, y, gi->allocatedWidth)];
-	//		VPixel * adjacent = center->adjacent;
-	//		printf("adjcent[TL] = (%d, %d, %d) ", adjacent[TL]->px.r, adjacent[TL]->px.g, adjacent[TL]->px.b);
-	//		printf("adjcent[T] = (%d, %d, %d) ", adjacent[T]->px.r, adjacent[T]->px.g, adjacent[T]->px.b);
-	//		printf("adjcent[TR] = (%d, %d, %d)\n", adjacent[TR]->px.r, adjacent[TR]->px.g, adjacent[TR]->px.b);
-	//		printf("adjcent[L] = (%d, %d, %d) ", adjacent[L]->px.r, adjacent[L]->px.g, adjacent[L]->px.b);
-	//		printf("center = (%d, %d, %d) ", center->px.r, center->px.g, center->px.b);
-	//		printf("adjcent[R] = (%d, %d, %d)\n", adjacent[R]->px.r, adjacent[R]->px.g, adjacent[R]->px.b);
-	//		printf("adjcent[BL] = (%d, %d, %d) ", adjacent[BL]->px.r, adjacent[BL]->px.g, adjacent[BL]->px.b);
-	//		printf("adjcent[B] = (%d, %d, %d) ", adjacent[B]->px.r, adjacent[B]->px.g, adjacent[B]->px.b);
-	//		printf("adjcent[BR] = (%d, %d, %d)\n", adjacent[BR]->px.r, adjacent[BR]->px.g, adjacent[BR]->px.b);
-	//		printf("---------------------------------------------------------\n");
-	//	}
-	//}
 
 	return gi;
 }
@@ -136,7 +104,7 @@ static void gimg_SetAllReferences(GImage gi) {
 }
 
 static void gimg_SetVPixelReferences(GImage gi, int x, int y) {
-	int xPrevious = ml_LimitedUMinus(x, 0); // if x = 0 -> return itself; else -> return x - 1 = previous pixel
+	int xPrevious = ml_LimitedUMinus(x, 0);
 	int xNext = ml_LimitedUPlus(x, gi->currentHeight - 1);
 
 	int yPrevious = ml_LimitedUMinus(y, 0);
@@ -165,13 +133,40 @@ static void gimg_SetVPixelReferences(GImage gi, int x, int y) {
 }
 
 void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns) {
-	//printf("Call: %s\n", __func__);
+	while (amountLines != 0 && amountColumns != 0) {
+		float columnBestPathValue = gimg_GetBestPossiblePathValue(gi);
 
+		gimg_Transpose(gi);
+
+		float lineBestPathValue = gimg_GetBestPossiblePathValue(gi);
+
+		if (lineBestPathValue < columnBestPathValue) {
+			gimg_RemoveColumns(gi, 1);
+			gimg_Transpose(gi);
+			amountLines--;
+		} else {
+			gimg_Transpose(gi);
+			gimg_RemoveColumns(gi, 1);
+			amountColumns--;
+		}
+	}
+
+	gimg_RemoveLines(gi, amountLines);
+	gimg_RemoveColumns(gi, amountColumns);
+}
+
+static float gimg_GetBestPossiblePathValue(GImage gi) {
+	gimg_CalculateEnergies(gi);
+
+	gimg_CalculatePaths(gi);
+
+	int pathIndex = gimg_GetBestPath(gi);
+	float pathValue = gi->vpixels[INDEX(0, pathIndex, gi->currentWidth)].px.energyInThatPath;
+
+	return pathValue;
 }
 
 void gimg_RemoveLines(GImage gi, int amount) {
-	//printf("Call: %s\n", __func__);
-
 	gimg_Transpose(gi);
 
 	gimg_RemoveColumns(gi, amount);
@@ -180,39 +175,64 @@ void gimg_RemoveLines(GImage gi, int amount) {
 }
 
 static void gimg_Transpose(GImage gi) {
-	//printf("Call: %s\n", __func__);
+	VPixel newVertices = (VPixel) malloc((gi->allocatedHeight * gi->allocatedWidth) * sizeof(vpixel));
 
-	
+	for (int y = 0; y < gi->allocatedWidth; y++){
+		for (int x = 0; x < gi->allocatedHeight; x++){
+			int indexN = INDEX(x, y, gi->allocatedWidth);
+			int indexT = INDEX(y, x, gi->allocatedHeight);
+			newVertices[indexT] = gi->vpixels[indexN];
+		}
+	}
+
+	int temp = 0;
+
+	temp = gi->allocatedWidth;
+	gi->allocatedWidth = gi->allocatedHeight;
+	gi->allocatedHeight = temp;
+
+	temp = gi->currentWidth;
+	gi->currentWidth = gi->currentHeight;
+	gi->currentHeight = temp;
+
+	for (int x = 0; x < gi->allocatedHeight; x++) {
+		for (int y = 0; y < gi->allocatedWidth; y++) {
+			int index = INDEX(x, y, gi->allocatedWidth);
+			VPixel vp = &gi->vpixels[index];
+			free(vp->adjacent);
+		}
+	}
+	free(gi->vpixels);
+
+	gi->vpixels = newVertices;
+
+	for (int x = 0; x < gi->allocatedHeight; x++) {
+		for (int y = 0; y < gi->allocatedWidth; y++) {
+			int index = INDEX(x, y, gi->allocatedWidth);
+			VPixel vp = &gi->vpixels[index];
+			vp->adjacent = (VPixel *) malloc(sizeof(VPixel) * 8);
+		}
+	}
+
+	gimg_SetAllReferences(gi);
 }
 
 void gimg_RemoveColumns(GImage gi, int amount) {
-	//printf("Call: %s\n", __func__);
-
-	int start = 0;
-	int end = gi->allocatedWidth - 1;
-
 	for (int i = 0; i < amount; i++) {
-		gimg_CalculateEnergies(gi, start, end);
+		gimg_CalculateEnergies(gi);
 
 		gimg_CalculatePaths(gi);
 
 		int index = gimg_GetBestPath(gi);
 
-		gimg_RemovePath(gi, index, &start, &end);
-
-		//start = ml_LimitedUMinus(start, 0);
-		//end = ml_LimitedUPlus(end, gi->currentWidth - 1);
+		gimg_RemovePath(gi, index);
 
 		gi->currentWidth--;
-
-		gimg_SetAllPathsNotChecked(gi);
 	}
 }
 
-static void gimg_CalculateEnergies(GImage gi, int start, int end) {
-	//printf("Call: %s\n", __func__);
-
-	for (int y = start; y <= end; y++) {
+static void gimg_CalculateEnergies(GImage gi) {
+	for (int y = 0; y < gi->currentWidth; y++) {
 		for (int x = 0; x < gi->currentHeight; x++) {
 			gimg_CalculateEnergy(gi, x, y);
 		}
@@ -220,7 +240,6 @@ static void gimg_CalculateEnergies(GImage gi, int start, int end) {
 }
 
 static void gimg_CalculateEnergy(GImage gi, int x, int y) {
-
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel center = &gi->vpixels[index];
 	VPixel * adjacent = center->adjacent;
@@ -235,7 +254,6 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y) {
 }
 
 static void gimg_CalculatePaths(GImage gi) {
-	//printf("Call: %s\n", __func__);
 	int currentHeight = gi->currentHeight - 1;
 	for (int x = currentHeight; x >= 0; x--){ 
 		gimg_CalculateAllPathsInLine(gi, x);
@@ -243,17 +261,12 @@ static void gimg_CalculatePaths(GImage gi) {
 }
 
 static void gimg_CalculateAllPathsInLine(GImage gi, int x) {
-	//printf("Call: %s\n", __func__);
-	// Funct to calc path of each pixel
 	for (int y = 0; y < gi->currentWidth; y++) {
 		gimg_CalculatePathOfPixel(gi, x, y);
 	}	
-
 }
 
 static void gimg_CalculatePathOfPixel(GImage gi, int x, int y) {
-	//printf("Call: %s\n", __func__);
-
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel p = &gi->vpixels[index];
 
@@ -285,8 +298,6 @@ static void gimg_CalculatePathOfPixel(GImage gi, int x, int y) {
 }
 
 static int gimg_GetBestPath(GImage gi) {
-	//printf("Call: %s\n", __func__);
-
 	int minIndex = 0;
 
 	for (int y = 1; y < gi->currentWidth; y++) {
@@ -302,15 +313,9 @@ static int gimg_GetBestPath(GImage gi) {
 	}
 
 	return minIndex;
-
 }
 
-static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
-	//printf("Call: %s\n", __func__);
-	
-	*(outStart) = y;
-	*(outEnd) = y;
-
+static void gimg_RemovePath(GImage gi, int y) {
 	for (int x = 0; x < gi->currentHeight; x++) {
 
 		int index = INDEX(x, y, gi->allocatedWidth);
@@ -319,46 +324,26 @@ static void gimg_RemovePath(GImage gi, int y, int * outStart, int * outEnd) {
 		int pathToFollow = p->px.next;
 
 		gimg_RemovePixel(gi, x, y);
-		//gimg_PaintPathToPink(gi, x, y);
 
 		switch (pathToFollow) {
 			case LEFT:
 				y = ml_LimitedUMinus(y, 0);
-				*(outStart) = gl_LimitedUMinus(y, *(outStart));
 				break;
 
-			case LAST_PIXEL:
-				break;
-			case CENTER:	
-				continue;
+			case CENTER: continue;
 
 			case RIGHT:
 				y = ml_LimitedUPlus(y, gi->currentWidth - 1);
-				*(outEnd) = gl_LimitedUPlus(y, *(outEnd));
 				break;
+
+			case LAST_PIXEL: break;
 		}
-
 	}
-
 }
 
-// static void gimg_PaintPathToPink(GImage gi, int x, int y) {
-
-// 	int index = INDEX(x, y, gi->allocatedWidth);
-//  	VPixel p = &gi->vpixels[index];
-
-// 	p->px.r = 255;
-// 	p->px.r = 0;
-// 	p->px.r = 255;
-	
-// }
-
 static void gimg_RemovePixel(GImage gi, int x, int y) {
-	//printf("Call: %s\n", __func__);
-
 	size_t n = gi->currentWidth;
 
-	//gicpy(GImage gi, int x, int y, size_t n); - Funct to copy grath
 	for (size_t column = y; column < n; column++) {
 		int index = INDEX(x, y, gi->allocatedWidth);
 		VPixel p = &gi->vpixels[index];
@@ -370,19 +355,6 @@ static void gimg_RemovePixel(GImage gi, int x, int y) {
 		p->px.li = p->adjacent[3]->px.li;
 
 		y++;
-	}
-
-}
-
-static void gimg_SetAllPathsNotChecked(GImage gi) {
-	//printf("Call: %s\n", __func__);
-
-	for (int y = 0; y < gi->currentWidth; y++) {
-		for (int x = 0; x < gi->currentHeight; x++) {
-			int index = INDEX(x, y, gi->allocatedWidth);
-			VPixel p = &gi->vpixels[index];
-			p->px.next = NOT_CHECKED_YET;
-		}
 	}
 }
 

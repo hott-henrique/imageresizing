@@ -3,6 +3,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#if defined(TIMING)
+#include "timing.h"
+#endif
+
 #define HORIZONTAL 'h'
 #define VERTICAL 'w'
 
@@ -14,29 +18,35 @@ static char imageMode = 'N';
 static long columnsToRemove = 0;
 static long linesToRemove = 0;
 
-int main(int argc, const char ** argv) {
-	// TODO: Se for fazer o extra tem que dar suporte para remover linhas e colunas ao mesmo tempo.
+#if defined(TIMING)
+FILE * timingstdout = NULL;
+#endif
 
+int main(int argc, const char ** argv) {
 	while (args_Parse(argc, argv));
 
-	fprintf(stdout, "%s %c %ld %ld\n", filePath, imageMode, linesToRemove, columnsToRemove);
+#if defined(TIMING)
+	timingstdout = fopen("timing.out", "w");
+	t_PrintHeader(timingstdout);
+#endif
 
 	Image i = img_Load(filePath, imageMode);
 
 	if (linesToRemove != 0 && columnsToRemove != 0) {
-	// Pediu para remover linhas e colunas.	
 		img_RemoveLinesAndColumns(i, linesToRemove, columnsToRemove);
 	} else if (linesToRemove != 0) {
-	// Pediu para remover apenas linhas.
 		img_RemoveLines(i, linesToRemove);
 	} else {
-	// Pediu para remover apenas colunas.
 		img_RemoveColumns(i, columnsToRemove);
 	}
 
 	img_Save(i, "Result.ppm");
 
 	img_Free(i);
+
+#if defined(TIMING)
+	fclose(timingstdout);
+#endif
 
 	return EXIT_SUCCESS;
 }

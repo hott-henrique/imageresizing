@@ -3,12 +3,22 @@
 
 #include <stdio.h>
 
-typedef struct timing_t timing;
+#include <sys/time.h>
+#include <sys/resource.h>
+#include <unistd.h>
 
-void em_Start(timing * t);
-void em_Finalize(timing * t);
+typedef struct timing_t {
+	struct timeval start;
+	struct timeval end;
 
-void em_PrintHeader(FILE * f);
-void em_Print(timing * t, FILE * f, const char * functionName);
+	struct rusage rstart;
+	struct rusage rend;
+} timing;
+
+void t_Start(timing * t);
+void t_Finalize(timing * t);
+
+void t_PrintHeader(FILE * f);
+void t_Print(timing * t, FILE * f, const char * functionName);
 
 #endif
