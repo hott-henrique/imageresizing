@@ -40,8 +40,8 @@ static void gimg_SetVPixelReferences(GImage gi, int x, int y);
 
 static void gimg_Transpose(GImage gi);
 
-static void gimg_CalculateEnergies(GImage gi, short operator);
-static void gimg_CalculateEnergy(GImage gi, int x, int y, short operator);
+static void gimg_CalculateEnergies(GImage gi, char operator);
+static void gimg_CalculateEnergy(GImage gi, int x, int y, char operator);
 
 static void gimg_CalculatePaths(GImage gi);
 static void gimg_CalculateAllPathsInLine(GImage gi, int x);
@@ -52,7 +52,7 @@ static int gimg_GetBestPath(GImage gi);
 static void gimg_RemovePath(GImage gi, int index);
 static void gimg_RemovePixel(GImage gi, int x, int y);
 
-static float gimg_GetBestPossiblePathValue(GImage gi, short operator);
+static float gimg_GetBestPossiblePathValue(GImage gi, char operator);
 
 GImage gimg_Load(const char * filePath) { // max(O(n)O(n^2)) -> O(n^2)
 	GImage gi = (GImage) malloc(sizeof(struct img_graph_t)); 
@@ -132,7 +132,7 @@ static void gimg_SetVPixelReferences(GImage gi, int x, int y) { // O(1)
 	vpx->adjacent[BR] = &gi->vpixels[indexBR];
 }
 
-void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns, short operator) {
+void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns, char operator) {
 	while (amountLines != 0 && amountColumns != 0) {
 		float columnBestPathValue = gimg_GetBestPossiblePathValue(gi, operator);
 
@@ -155,7 +155,7 @@ void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns, s
 	gimg_RemoveColumns(gi, amountColumns, operator);
 }
 
-static float gimg_GetBestPossiblePathValue(GImage gi, short operator) {
+static float gimg_GetBestPossiblePathValue(GImage gi, char operator) {
 	gimg_CalculateEnergies(gi, operator);
 
 	gimg_CalculatePaths(gi);
@@ -166,7 +166,7 @@ static float gimg_GetBestPossiblePathValue(GImage gi, short operator) {
 	return pathValue;
 }
 
-void gimg_RemoveLines(GImage gi, int amount, short operator) {
+void gimg_RemoveLines(GImage gi, int amount, char operator) {
 	gimg_Transpose(gi);
 
 	gimg_RemoveColumns(gi, amount, operator); // O(n^3)
@@ -217,7 +217,7 @@ static void gimg_Transpose(GImage gi) {
 	gimg_SetAllReferences(gi);
 }
 
-void gimg_RemoveColumns(GImage gi, int amount, short operator) { // o(n^3) 
+void gimg_RemoveColumns(GImage gi, int amount, char operator) { // o(n^3) 
 	for (int i = 0; i < amount; i++) { // No pior caso, eu removo todas as colunas - 1 -> O(n) * max(O(n)O(n^2))
 		gimg_CalculateEnergies(gi, operator);
 
@@ -231,7 +231,7 @@ void gimg_RemoveColumns(GImage gi, int amount, short operator) { // o(n^3)
 	}
 }
 
-static void gimg_CalculateEnergies(GImage gi, short operator) { // O(n^2)
+static void gimg_CalculateEnergies(GImage gi, char operator) { // O(n^2)
 	for (int x = 0; x < gi->currentHeight; x++) {
 		for (int y = 0; y < gi->currentWidth; y++) {
 			gimg_CalculateEnergy(gi, x, y, operator); // O(1)
@@ -239,7 +239,7 @@ static void gimg_CalculateEnergies(GImage gi, short operator) { // O(n^2)
 	}
 }
 
-static void gimg_CalculateEnergy(GImage gi, int x, int y, short operator) { // O(1)
+static void gimg_CalculateEnergy(GImage gi, int x, int y, char operator) { // O(1)
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel center = &gi->vpixels[index];
 	VPixel * adjacent = center->adjacent;
@@ -356,8 +356,6 @@ static void gimg_RemovePixel(GImage gi, int x, int y) { // O(n)
 }
 
 void gimg_Save(GImage gi, const char * fileName) { // O(n^2)
-	printf("Call: %s\n", __func__);
-
 	FILE * f = fopen(fileName, "w");
 
 	fprintf(f, "P3\n");
@@ -375,8 +373,6 @@ void gimg_Save(GImage gi, const char * fileName) { // O(n^2)
 }
 
 void gimg_Free(GImage gi) { // O(n^2)
-	printf("Call: %s\n", __func__);
-
 	for (int x = 0; x < gi->allocatedHeight; x++) {
 		for (int y = 0; y < gi->allocatedWidth; y++) {
 			int index = INDEX(x, y, gi->allocatedWidth);

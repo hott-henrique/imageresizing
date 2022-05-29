@@ -2,8 +2,8 @@
 #define TP2_PIXEL_HEADER
 
 enum Operators {
-	Sobel,
-	SobelFeldman,
+	Sobel = 'S',
+	SobelFeldman = 'F',
 };
 
 enum PathOptions {
@@ -26,6 +26,6 @@ typedef struct pixel_t pixel;
 typedef struct pixel_t * Pixel;
 
 void px_CalculateLI(Pixel p);
-float px_CalculateEnergy(float liRegion[3][3], short operator);
+float px_CalculateEnergy(float liRegion[3][3], char operator);
 
 #endif

@@ -1,5 +1,6 @@
 #include "pixel.h"
 
+#include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -16,7 +17,7 @@ void px_CalculateLI(Pixel p) { // O(1)
 	p->li = 0.30 * p->r + 0.59 * p->g + 0.11 * p->b;
 }
 
-float px_CalculateEnergy(float liRegion[3][3], short operator) { // O(1)
+float px_CalculateEnergy(float liRegion[3][3], char operator) { // O(1)
 	float gx, gy;
 
 	switch (operator) {
@@ -25,10 +26,14 @@ float px_CalculateEnergy(float liRegion[3][3], short operator) { // O(1)
 			gy = px_ApplyWeigths(liRegion,Gy_Sobel);
 		break;
 
-	case SobelFeldman:
+		case SobelFeldman:
 			gx =px_ApplyWeigths(liRegion,Gx_SobelFeldman);
 			gy =px_ApplyWeigths(liRegion,Gy_SobelFeldman);
 		break;
+
+		default:
+			fprintf(stderr, "Unknow operator: %c.\n", operator);
+			exit(EXIT_FAILURE);
 	}
 
 	return sqrtf((gx * gx) + (gy * gy));	

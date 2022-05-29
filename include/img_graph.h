@@ -5,9 +5,9 @@ typedef struct img_graph_t * GImage;
 
 GImage gimg_Load(const char * filePath);
 
-void gimg_RemoveLines(GImage gi, int amount, short operator);
-void gimg_RemoveColumns(GImage gi, int amount, short operator);
-void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns, short operator);
+void gimg_RemoveLines(GImage gi, int amount, char operator);
+void gimg_RemoveColumns(GImage gi, int amount, char operator);
+void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns, char operator);
 
 void gimg_Save(GImage gi, const char * fileName);
 

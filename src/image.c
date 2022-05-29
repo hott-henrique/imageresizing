@@ -21,11 +21,11 @@ Image img_Load(const char * filePath, char mode) { // O(n^2)
 	switch (i->mode) {
 		case 'M':
 			i->representations.M = mimg_Load(filePath); // O(n^2)
-			break;
+		break;
 
 		case 'G':
 			i->representations.G = gimg_Load(filePath); // O(n^2)
-			break;
+		break;
 
 		default:
 			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
@@ -35,15 +35,15 @@ Image img_Load(const char * filePath, char mode) { // O(n^2)
 	return i;
 }
 
-void img_RemoveLines(Image i, int amount, short operator) {
+void img_RemoveLines(Image i, int amount, char operator) {
 	switch (i->mode) {
 		case 'M':
 			mimg_RemoveLines(i->representations.M, amount, operator);
-			break;
+		break;
 
 		case 'G':
 			gimg_RemoveLines(i->representations.G, amount, operator);
-			break;
+		break;
 
 		default:
 			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
@@ -51,15 +51,15 @@ void img_RemoveLines(Image i, int amount, short operator) {
 	}
 }
 
-void img_RemoveColumns(Image i, int amount, short operator) {
+void img_RemoveColumns(Image i, int amount, char operator) {
 	switch (i->mode) {
 		case 'M':
 			mimg_RemoveColumns(i->representations.M, amount, operator);
-			break;
+		break;
 
 		case 'G':
 			gimg_RemoveColumns(i->representations.G, amount, operator);
-			break;
+		break;
 
 		default:
 			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
@@ -67,15 +67,15 @@ void img_RemoveColumns(Image i, int amount, short operator) {
 	}
 }
 
-void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns, short operator) {
+void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns, char operator) {
 	switch (i->mode) {
 		case 'M':
 			mimg_RemoveLinesAndColumns(i->representations.M, amountLines, amountColumns, operator);
-			break;
+		break;
 
 		case 'G':
 			gimg_RemoveLinesAndColumns(i->representations.G, amountLines, amountColumns, operator);
-			break;
+		break;
 
 		default:
 			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
@@ -87,11 +87,11 @@ void img_Save(Image i, const char * fileName) {
 	switch (i->mode) {
 		case 'M':
 			mimg_Save(i->representations.M, fileName);
-			break;
+		break;
 
 		case 'G':
 			gimg_Save(i->representations.G, fileName);
-			break;
+		break;
 
 		default:
 			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
@@ -103,11 +103,11 @@ void img_Free(Image i) {
 	switch (i->mode) {
 		case 'M':
 			mimg_Free(i->representations.M);
-			break;
+		break;
 
 		case 'G':
 			gimg_Free(i->representations.G);
-			break;
+		break;
 
 		default:
 			fprintf(stderr, "Unknown image mode: %c\n", i->mode);
