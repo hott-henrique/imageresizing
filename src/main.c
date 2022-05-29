@@ -33,11 +33,11 @@ int main(int argc, const char ** argv) {
 	Image i = img_Load(filePath, imageMode);
 
 	if (linesToRemove != 0 && columnsToRemove != 0) {
-		img_RemoveLinesAndColumns(i, linesToRemove, columnsToRemove);
+		img_RemoveLinesAndColumns(i, linesToRemove, columnsToRemove, 0);
 	} else if (linesToRemove != 0) {
-		img_RemoveLines(i, linesToRemove);
+		img_RemoveLines(i, linesToRemove, 0);
 	} else {
-		img_RemoveColumns(i, columnsToRemove);
+		img_RemoveColumns(i, columnsToRemove, 0);
 	}
 
 	img_Save(i, "Result.ppm");

@@ -35,14 +35,14 @@ Image img_Load(const char * filePath, char mode) { // O(n^2)
 	return i;
 }
 
-void img_RemoveLines(Image i, int amount) {
+void img_RemoveLines(Image i, int amount, short operator) {
 	switch (i->mode) {
 		case 'M':
-			mimg_RemoveLines(i->representations.M, amount);
+			mimg_RemoveLines(i->representations.M, amount, operator);
 			break;
 
 		case 'G':
-			gimg_RemoveLines(i->representations.G, amount);
+			gimg_RemoveLines(i->representations.G, amount, operator);
 			break;
 
 		default:
@@ -51,14 +51,14 @@ void img_RemoveLines(Image i, int amount) {
 	}
 }
 
-void img_RemoveColumns(Image i, int amount) {
+void img_RemoveColumns(Image i, int amount, short operator) {
 	switch (i->mode) {
 		case 'M':
-			mimg_RemoveColumns(i->representations.M, amount);
+			mimg_RemoveColumns(i->representations.M, amount, operator);
 			break;
 
 		case 'G':
-			gimg_RemoveColumns(i->representations.G, amount);
+			gimg_RemoveColumns(i->representations.G, amount, operator);
 			break;
 
 		default:
@@ -67,14 +67,14 @@ void img_RemoveColumns(Image i, int amount) {
 	}
 }
 
-void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns) {
+void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns, short operator) {
 	switch (i->mode) {
 		case 'M':
-			mimg_RemoveLinesAndColumns(i->representations.M, amountLines, amountColumns);
+			mimg_RemoveLinesAndColumns(i->representations.M, amountLines, amountColumns, operator);
 			break;
 
 		case 'G':
-			gimg_RemoveLinesAndColumns(i->representations.G, amountLines, amountColumns);
+			gimg_RemoveLinesAndColumns(i->representations.G, amountLines, amountColumns, operator);
 			break;
 
 		default:
