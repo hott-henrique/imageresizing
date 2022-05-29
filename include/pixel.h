@@ -14,11 +14,20 @@ struct pixel_t {
 	float li;
 	float energy;
 	short next; //Represent the next pixel in path - It can var: -1, 0, 1
+	short previous;
 	float energyInThatPath;	// Energy that it were acumulated when get the best path
 };
 
 typedef struct pixel_t pixel;
 typedef struct pixel_t * Pixel;
+
+struct vpixel_t {
+	pixel px;
+	struct vpixel_t ** adjacent;
+};
+
+typedef struct vpixel_t vpixel;
+typedef vpixel * VPixel;
 
 void px_CalculateLI(Pixel p);
 float px_CalculateEnergy(float liRegion[3][3]);

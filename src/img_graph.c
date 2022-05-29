@@ -3,17 +3,10 @@
 #include "pixel.h"
 #include "ppm.h"
 #include "mlimits.h"
+#include "heap.h"
 
 #include <stdlib.h>
 #include <stdio.h>
-
-struct vpixel_t {
-	pixel px;
-	struct vpixel_t ** adjacent;
-};
-
-typedef struct vpixel_t vpixel;
-typedef vpixel * VPixel;
 
 struct img_graph_t {
 	int currentWidth, currentHeight; 
@@ -47,6 +40,10 @@ static void gimg_CalculatePaths(GImage gi);
 static void gimg_CalculateAllPathsInLine(GImage gi, int x);
 static void gimg_CalculatePathOfPixel(GImage, int x, int y);
 
+
+static void gimg_CalculateAllPathsInColumn(GImage gi, int y);
+
+
 static int gimg_GetBestPath(GImage gi);
 
 static void gimg_RemovePath(GImage gi, int index);
@@ -69,7 +66,7 @@ GImage gimg_Load(const char * filePath) { // max(O(n)O(n^2)) -> O(n^2)
 			int index = INDEX(x, y, gi->allocatedWidth);
 
 			VPixel vp = &gi->vpixels[index];
-			vp->adjacent = (VPixel *) malloc(sizeof(VPixel) * 8);
+			vp->adjacent = (VPixel *) malloc(sizeof(VPixel) * 8); // Just bottom adjace
 		}
 	}
 
@@ -253,49 +250,69 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y) { // O(1)
 	center->px.energy = px_CalculateEnergy(region); // O(1)
 }
 
-static void gimg_CalculatePaths(GImage gi) { // O(n^2)
-	int currentHeight = gi->currentHeight - 1;
-	for (int x = currentHeight; x >= 0; x--){ 
-		gimg_CalculateAllPathsInLine(gi, x); // O(n)
-	}
-}
-
-static void gimg_CalculateAllPathsInLine(GImage gi, int x) { // O(n)
-	for (int y = 0; y < gi->currentWidth; y++) {
-		gimg_CalculatePathOfPixel(gi, x, y); // O(1)
-	}	
-}
-
-static void gimg_CalculatePathOfPixel(GImage gi, int x, int y) { // O(1)
-	int index = INDEX(x, y, gi->allocatedWidth);
-	VPixel p = &gi->vpixels[index];
-
-	int currentHeight = gi->currentHeight - 1;
-	if (currentHeight == x) {
-		p->px.energyInThatPath = p->px.energy;
-		p->px.next = LAST_PIXEL;
-		return;
-	}
-
-	int minIndex;
-
-	float cheapestPath = 0.0f;
-
-	for (int adjacentIndex = BL; adjacentIndex <= BR; adjacentIndex++) {
-		float pathCost = p->adjacent[adjacentIndex]->px.energyInThatPath;
-
-		if (adjacentIndex == BL || pathCost < cheapestPath) {
-			cheapestPath = pathCost;
-			minIndex = adjacentIndex;
-		} 
-	}
-
-	static short paths[3] = { LEFT, CENTER, RIGHT };
+static void gimg_CalculatePaths(GImage gi) {
 	
-	p->px.next = paths[minIndex];
+	for (int y = 0; y < gi->currentWidth; y++) {
+		gimg_CalculateAllPathsInColumn(gi, y);
+	}
 
-	p->px.energyInThatPath = cheapestPath + p->px.energy;
 }
+
+static void gimg_CalculateAllPathsInColumn(GImage gi, int y) {
+
+	for (int x = 1; x < gi->currentWidth; x++) {
+		// Calcular os melhores caminhos de
+		int originIndex = INDEX(0, y, gi->allocatedWidth);
+		VPixel originPixel = &gi->vpixels[originIndex];
+
+		Heap heapGrath = (Heap) malloc(sizeof(struct heap_t));
+	}
+
+}
+
+// static void gimg_CalculatePaths(GImage gi) { // O(n^2)
+// 	int currentHeight = gi->currentHeight - 1;
+// 	for (int x = currentHeight; x >= 0; x--){ 
+// 		gimg_CalculateAllPathsInLine(gi, x); // O(n)
+// 	}
+// }
+
+// static void gimg_CalculateAllPathsInLine(GImage gi, int x) { // O(n)
+// 	for (int y = 0; y < gi->currentWidth; y++) {
+// 		gimg_CalculatePathOfPixel(gi, x, y); // O(1)
+// 	}	
+// }
+
+// static void gimg_CalculatePathOfPixel(GImage gi, int x, int y) { // O(1)
+// 	int index = INDEX(x, y, gi->allocatedWidth);
+// 	VPixel p = &gi->vpixels[index];
+
+// 	int currentHeight = gi->currentHeight - 1;
+// 	if (currentHeight == x) {
+// 		p->px.energyInThatPath = p->px.energy;
+// 		p->px.next = LAST_PIXEL;
+// 		return;
+// 	}
+
+// 	int minIndex;
+
+// 	float cheapestPath = 0.0f;
+
+// 	for (int adjacentIndex = BL; adjacentIndex <= BR; adjacentIndex++) {
+// 		float pathCost = p->adjacent[adjacentIndex]->px.energyInThatPath;
+
+// 		if (adjacentIndex == BL || pathCost < cheapestPath) {
+// 			cheapestPath = pathCost;
+// 			minIndex = adjacentIndex;
+// 		} 
+// 	}
+
+// 	static short paths[3] = { LEFT, CENTER, RIGHT };
+	
+// 	p->px.next = paths[minIndex];
+
+// 	p->px.energyInThatPath = cheapestPath + p->px.energy;
+// }
 
 static int gimg_GetBestPath(GImage gi) { // O(n)
 	int minIndex = 0;
