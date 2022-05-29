@@ -261,11 +261,19 @@ static void gimg_CalculatePaths(GImage gi) {
 static void gimg_CalculateAllPathsInColumn(GImage gi, int y) {
 
 	for (int x = 1; x < gi->currentWidth; x++) {
-		// Calcular os melhores caminhos de
+
 		int originIndex = INDEX(0, y, gi->allocatedWidth);
 		VPixel originPixel = &gi->vpixels[originIndex];
 
+		// Create heap to organization grath pixels
 		Heap heapGrath = (Heap) malloc(sizeof(struct heap_t));
+
+		int heapSizeWithoutFirstLine = (gi->currentHeight * gi->currentWidth) - (gi->currentWidth - 1)
+		heapGrath->capacity = heapSizeWithoutFirstLine;
+		heapGrath->pixelsInHeap = (VPixel) malloc(sizeof(vpixel_t) * heapSizeWithoutFirstLine);
+
+		
+
 	}
 
 }
