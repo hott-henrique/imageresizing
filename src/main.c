@@ -56,6 +56,9 @@ int main(int argc, char ** argv) {
 #if defined(TIMING)
 	timingstdout = fopen("timing.out", "w");
 	t_PrintHeader(timingstdout);
+
+	timing t = { 0 };
+	t_Start(&t);
 #endif
 
 	Image i = img_Load(args.inputFilePath, args.imageMode);
@@ -67,6 +70,8 @@ int main(int argc, char ** argv) {
 	} else {
 		img_RemoveColumns(i, args.columnsToRemove, args.operator);
 	}
+
+	printf("Dale.\n");
 
 
 	FILE * f = NULL == args.outputFilePath ? stdout : fopen(args.outputFilePath, "w");
@@ -81,6 +86,9 @@ int main(int argc, char ** argv) {
 	img_Free(i);
 
 #if defined(TIMING)
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, 0);
+
 	fclose(timingstdout);
 #endif
 

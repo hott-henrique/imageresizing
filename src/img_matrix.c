@@ -1,8 +1,10 @@
 #include "img_matrix.h"
+
 #include "mlimits.h"
 #include "pixel.h"
 #include "ppm.h"
 #include "timing.h"
+extern FILE * timingstdout;
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -14,7 +16,6 @@
  *		y = columns (width)
  * */
 
-extern FILE * timingstdout;
 
 struct img_matrix_t {
 	int currentWidth, currentHeight;
@@ -43,6 +44,11 @@ static void mimg_CalculateEnergy(MImage mi, int x, int y, char operator);
 static float mimg_GetBestPossiblePathValue(MImage mi, char operator);
 
 MImage mimg_Load(const char * filePath) { // O(n^2)
+#ifdef TIMING
+	timing t;
+	t_Start(&t);
+#endif
+
 	MImage mi = (MImage) malloc(sizeof(struct img_matrix_t));
 
 	ppm_GetProperties(filePath, &mi->allocatedWidth, &mi->allocatedHeight, &mi->maxComponentValue); // O(n)
@@ -53,7 +59,11 @@ MImage mimg_Load(const char * filePath) { // O(n^2)
 	mi->currentHeight = mi->allocatedHeight;
 
 	ppm_ForEachPixel(filePath, mimg_SetPixel, mi); // O(n^2)
-
+												   //
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 	return mi;
 }
 
@@ -74,6 +84,10 @@ void mimg_SetPixel(int x, int y, pixel p, void * miPtr) { // O(1)
 }
 
 void mimg_RemoveLinesAndColumns(MImage mi, int amountLines, int amountColumns, char operator) {
+#ifdef TIMING
+	timing t;
+	t_Start(&t);
+#endif
 	while (amountLines != 0 && amountColumns != 0) {
 		float columnBestPathValue = mimg_GetBestPossiblePathValue(mi, operator);
 
@@ -95,9 +109,17 @@ void mimg_RemoveLinesAndColumns(MImage mi, int amountLines, int amountColumns, c
 	// Any of these will be 0 so it will just return.
 	mimg_RemoveLines(mi, amountLines, operator);
 	mimg_RemoveColumns(mi, amountColumns, operator);
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
 static float mimg_GetBestPossiblePathValue(MImage mi, char operator) {
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	mimg_CalculateEnergies(mi, 0, mi->currentWidth - 1, operator);
 
 	mimg_CalculatePaths(mi);
@@ -107,10 +129,18 @@ static float mimg_GetBestPossiblePathValue(MImage mi, char operator) {
 
 	mimg_SetAllPathsNotChecked(mi);
 
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 	return pathValue;
 }
 
 void mimg_RemoveLines(MImage mi, int amount, char operator) { // max(O(n^2)O(n^4)) -> O(n^4)
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	if (amount == 0) return;
 
 	mimg_Transpose(mi);  // O(n^2)
@@ -118,6 +148,10 @@ void mimg_RemoveLines(MImage mi, int amount, char operator) { // max(O(n^2)O(n^4
 	mimg_RemoveColumns(mi, amount, operator); // O(n^4)
 
 	mimg_Transpose(mi);
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
 static void mimg_Transpose(MImage mi) { // O(n^2)
@@ -150,11 +184,15 @@ static void mimg_Transpose(MImage mi) { // O(n^2)
 	mi->matrix = newMatrix;
 #if defined(TIMING)
 	t_Finalize(&t);
-	t_Print(&t, timingstdout, __func__, mi->currentWidth * mi->currentHeight);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
 #endif
 }
 
 void mimg_RemoveColumns(MImage mi, int amount, char operator) { // O(n^4)
+#if defined(TIMING)
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	int start = 0;
 	int end = mi->currentWidth - 1;
 
@@ -173,15 +211,27 @@ void mimg_RemoveColumns(MImage mi, int amount, char operator) { // O(n^4)
 		mi->currentWidth--;
 
 		mimg_SetAllPathsNotChecked(mi); // O(n^2)
-	}	
+	}
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
 static void mimg_CalculateEnergies(MImage mi, int start, int end, char operator) { // O(n^2)
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	for (int y = start; y <= end; y++) {
 		for (int x = 0; x < mi->currentHeight; x++) {
 			mimg_CalculateEnergy(mi, x, y, operator);
 		}
 	}
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
 static void mimg_CalculateEnergy(MImage mi, int x, int y, char operator) { // O(1)
@@ -211,6 +261,10 @@ static void mimg_CalculateEnergy(MImage mi, int x, int y, char operator) { // O(
 }
 
 static int mimg_GetBestPath(MImage mi) { // O(n)
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	int minIndex = 0;
 	for (int y = 1; y < mi->currentWidth; y++) {
 		float minEnergy = mi->matrix[INDEX(0, minIndex, mi->allocatedWidth)].energyInThatPath;
@@ -220,17 +274,28 @@ static int mimg_GetBestPath(MImage mi) { // O(n)
 			minIndex = y;
 		}
 	}
-
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 	return minIndex;
 }
 
 static void mimg_CalculatePaths(MImage mi) { // O(n^3)
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	for (int y = 0; y < mi->currentWidth; y++) {
 		mimg_CalculatePathOfPixel(mi, 0, y); 
 	}
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
-static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) { // {caso base: T(1) = 1; T(n-1) + 8} -> f(n) = 4n^2 + 33 -> O(n^2)
+static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) { // caso base: T(1) = 1; T(n-1) + 8 -> f(n) = 4n^2 + 33 -> O(n^2)
 	int index = INDEX(x, y, mi->allocatedWidth);
 	Pixel p = &mi->matrix[index];
 
@@ -267,11 +332,14 @@ static float mimg_CalculatePathOfPixel(MImage mi, int x, int y) { // {caso base:
 
 		p->energyInThatPath = p->energy + cheapestPath;
 	}
-
 	return p->energyInThatPath;
 }
 
 static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	if (outStart != NULL) *(outStart) = y;
 	if (outEnd != NULL) *(outEnd) = y;
 
@@ -296,9 +364,17 @@ static void mimg_RemovePath(MImage mi, int y, int * outStart, int * outEnd) {
 			case LAST_PIXEL: break;
 		}
 	}
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
 static void mimg_RemovePixel(MImage mi, int x, int y) { // O(n)
+//#ifdef TIMING
+//	timing t = { 0 };
+//	t_Start(&t);
+//#endif
 	int index = INDEX(x, y, mi->allocatedWidth);
 
 	if (index == mi->currentWidth * mi->currentHeight - 1) return;
@@ -308,9 +384,17 @@ static void mimg_RemovePixel(MImage mi, int x, int y) { // O(n)
 	size_t n = mi->currentWidth - y - 1;
 
 	memcpy(dest, src, sizeof(pixel) * n); // O(n)
+//#ifdef TIMING
+//	t_Finalize(&t);
+//	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+//#endif
 }
 
 static void mimg_SetAllPathsNotChecked(MImage mi) { // O(n^2)
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	for (int y = 0; y < mi->currentWidth; y++) {
 		for (int x = 0; x < mi->currentHeight; x++) {
 			int index = INDEX(x, y, mi->allocatedWidth);
@@ -318,9 +402,17 @@ static void mimg_SetAllPathsNotChecked(MImage mi) { // O(n^2)
 			p->next = NOT_CHECKED_YET;
 		}
 	}
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
 void mimg_Print(MImage mi, FILE * f) { // O(n^2)
+#ifdef TIMING
+	timing t = { 0 };
+	t_Start(&t);
+#endif
 	fprintf(f, "P3\n");
 	fprintf(f, "%d %d\n", mi->currentWidth, mi->currentHeight);
 	fprintf(f, "%d\n", mi->maxComponentValue);
@@ -331,6 +423,10 @@ void mimg_Print(MImage mi, FILE * f) { // O(n^2)
 			fprintf(f, "%d %d %d\n", p.r, p.g, p.b);	
 		}
 	}
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, mi->currentWidth);
+#endif
 }
 
 void mimg_Free(MImage mi) { // O(1)
