@@ -83,14 +83,14 @@ void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns, char
 	}
 }
 
-void img_Save(Image i, const char * fileName) {
+void img_Print(Image i, FILE * f) {
 	switch (i->mode) {
 		case 'M':
-			mimg_Save(i->representations.M, fileName);
+			mimg_Print(i->representations.M, f);
 		break;
 
 		case 'G':
-			gimg_Save(i->representations.G, fileName);
+			gimg_Print(i->representations.G, f);
 		break;
 
 		default:

@@ -355,9 +355,7 @@ static void gimg_RemovePixel(GImage gi, int x, int y) { // O(n)
 	}
 }
 
-void gimg_Save(GImage gi, const char * fileName) { // O(n^2)
-	FILE * f = fopen(fileName, "w");
-
+void gimg_Print(GImage gi, FILE * f) { // O(n^2)
 	fprintf(f, "P3\n");
 	fprintf(f, "%d %d\n", gi->currentWidth, gi->currentHeight);
 	fprintf(f, "%d\n", gi->maxComponentValue);
@@ -368,8 +366,6 @@ void gimg_Save(GImage gi, const char * fileName) { // O(n^2)
 			fprintf(f, "%d %d %d\n", p.r, p.g, p.b);	
 		}
 	}
-
-	fclose(f);
 }
 
 void gimg_Free(GImage gi) { // O(n^2)

@@ -31,7 +31,7 @@ void args_ShowUsage(const char * programName);
 int main(int argc, char ** argv) {
 	arguments args = {
 		.inputFilePath = NULL,
-		.outputFilePath = "result.ppm",
+		.outputFilePath = NULL,
 		.imageMode = 'N',
 		.columnsToRemove = 0,
 		.linesToRemove = 0,
@@ -68,7 +68,15 @@ int main(int argc, char ** argv) {
 		img_RemoveColumns(i, args.columnsToRemove, args.operator);
 	}
 
-	img_Save(i, args.outputFilePath);
+
+	FILE * f = NULL == args.outputFilePath ? stdout : fopen(args.outputFilePath, "w");
+
+	if (NULL == f) {
+		fprintf(stderr, "Couldn't open output file: %s\n", args.outputFilePath);
+	} else {
+		img_Print(i, f);
+		if (NULL != f && stdout != f) fclose(f);
+	}
 
 	img_Free(i);
 

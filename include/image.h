@@ -1,6 +1,8 @@
 #ifndef TP2_IMAGE_HEADER
 #define TP2_IMAGE_HEADER
 
+#include <stdio.h>
+
 enum ImageMode {
 	MATRIX = 'M',
 	GRAPH = 'G'
@@ -14,7 +16,7 @@ void img_RemoveLines(Image i, int amount, char operator);
 void img_RemoveColumns(Image i, int amount, char operator);
 void img_RemoveLinesAndColumns(Image i, int amountLines, int amountColumns, char operator);
 
-void img_Save(Image i, const char * fileName);
+void img_Print(Image i, FILE * f);
 
 void img_Free(Image i);
 

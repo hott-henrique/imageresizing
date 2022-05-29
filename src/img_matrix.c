@@ -208,7 +208,6 @@ static void mimg_CalculateEnergy(MImage mi, int x, int y, char operator) { // O(
 	};
 
 	mi->matrix[INDEX(x, y, mi->allocatedWidth)].energy = px_CalculateEnergy(region, operator); // O(1)
-	printf("dale\n");
 }
 
 static int mimg_GetBestPath(MImage mi) { // O(n)
@@ -321,9 +320,7 @@ static void mimg_SetAllPathsNotChecked(MImage mi) { // O(n^2)
 	}
 }
 
-void mimg_Save(MImage mi, const char * fileName) { // O(n^2)
-	FILE * f = fopen(fileName, "w");
-
+void mimg_Print(MImage mi, FILE * f) { // O(n^2)
 	fprintf(f, "P3\n");
 	fprintf(f, "%d %d\n", mi->currentWidth, mi->currentHeight);
 	fprintf(f, "%d\n", mi->maxComponentValue);
@@ -334,8 +331,6 @@ void mimg_Save(MImage mi, const char * fileName) { // O(n^2)
 			fprintf(f, "%d %d %d\n", p.r, p.g, p.b);	
 		}
 	}
-
-	fclose(f);
 }
 
 void mimg_Free(MImage mi) { // O(1)
