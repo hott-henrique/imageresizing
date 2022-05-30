@@ -15,7 +15,7 @@ struct pixel_t {
 	float energy;
 	short next; //Represent the next pixel in path - It can var: -1, 0, 1
 	short previous;
-	float energyInThatPath;	// Energy that it were acumulated when get the best path
+	long float energyInThatPath;	// Energy that it were acumulated when get the best path
 };
 
 typedef struct pixel_t pixel;

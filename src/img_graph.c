@@ -4,9 +4,11 @@
 #include "ppm.h"
 #include "mlimits.h"
 #include "heap.h"
+#include "stack.h"
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <float.h>
 
 struct img_graph_t {
 	int currentWidth, currentHeight; 
@@ -260,22 +262,56 @@ static void gimg_CalculatePaths(GImage gi) {
 
 static void gimg_CalculateAllPathsInColumn(GImage gi, int y) {
 
+	// Origin index
+	int originIndex = INDEX(0, y, gi->allocatedWidth);
+	VPixel originPixel = &gi->vpixels[originIndex];
+
+	// Build heap
+	size_t size = gi->currentWidth * currentHeight;
+	Heap heapGrath = heap_BuildHeap(size);
+
+	// Set all pixels to infinity value in the path
+	gimg_SetAllPixelsToInfinity(gi);
+
+	// Set all paths not checked yet to deep search
+	mimg_SetAllPathsNotChecked(GImage gi);
+
+	// Deep search to map the tree
+	gimg_GrathToHeap(gi, heapGrath, originIndex);
+
 	for (int x = 1; x < gi->currentWidth; x++) {
 
-		int originIndex = INDEX(0, y, gi->allocatedWidth);
-		VPixel originPixel = &gi->vpixels[originIndex];
 
-		// Create heap to organization grath pixels
-		Heap heapGrath = (Heap) malloc(sizeof(struct heap_t));
+	}
+}
 
-		int heapSizeWithoutFirstLine = (gi->currentHeight * gi->currentWidth) - (gi->currentWidth - 1)
-		heapGrath->capacity = heapSizeWithoutFirstLine;
-		heapGrath->pixelsInHeap = (VPixel) malloc(sizeof(vpixel_t) * heapSizeWithoutFirstLine);
+static void gimg_GrathToHeap(Gimage gi, Heap h, int originIndex) {
 
-		
+	VPixel originPixel = gi->vpixels[originIndex];
+	while () {
 
 	}
 
+}
+
+static void gimg_SetAllPixelsToInfinity(GImage gi) {
+
+	for (int x = 0; x < gi->currentHeight; x++) {
+		for (int y = 0; y < gi->currentWidth; y++) {
+			int index = INDEX(x, y, gi->allocatedWidth);
+			gi->vpixels[index].px.energyInThatPath = FLT_MAX;
+		}
+	}
+}
+
+static void mimg_SetAllPathsNotChecked(GImage gi) { 
+	for (int y = 0; y < gi->currentWidth; y++) {
+		for (int x = 0; x < gi->currentHeight; x++) {
+			int index = INDEX(x, y, gi->allocatedWidth);
+			Pixel p = &gi->vpixels[index];
+			p->next = NOT_CHECKED_YET;
+		}
+	}
 }
 
 // static void gimg_CalculatePaths(GImage gi) { // O(n^2)

@@ -3,6 +3,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define HEAP_MAX_PARENTS 3
+
 struct heap_t {
     struct vpixel_t ** pixelsInHeap;
     int current_size;
@@ -16,30 +18,63 @@ void swap(VPixel x, VPixel y) {
     *y = *temp;
 }
 
+Heap heap_BuildHeap(int size) {
+
+    Heap h = (Heap) malloc(sizeof(heap_t));
+
+    h->pixelsInHeap = (VPixel) malloc(sizeof(struct vpixel_t) * size);
+    h->capacity = size;
+    h->current_size = 0;
+
+    return h;
+}
+
 void heap_insertPixel(Heap h, VPixel pixel) {
 
-    vpixel_t * Pixels = h->pixelsInHeap;
-
     if (h->current_size == h->capacity) {
-        printf("Overflow: Cannot insert more pixels in heap.\n");
+        printf("Cannot insert more pixels in heap.\n");
         return;
     }
 
     h->current_size++;
-    int indexOfPixel = h->current_size - 1;
+    g->pixelsInHeap[h->current_size] = y;
 
-    // Aplly min heap and orden pixels by min path
-    while (indexOfPixel != 0 && Pixels[indexOfPixel].px.energyInThatPath > ) {
-        // Get the parents of pixel
-        // Swap case min ocorr
-    }
+    heap_ToMinHeap(h);
+
+    return;
 } 
 
 
 VPixel heap_DeletePixel(Heap h) {
 
+    VPixel p = h->pixelsInHeap[0];
+    size_t size = h->current_size - 1;
+    for (int i = size; i > 0; i--) {
+        int previousIndex = i - 1;
+        h->pixelsInHeap[previousIndex] = h->pixelsInHeap[i]; 
+    }
+
+    return p;
+}
+
+void heap_ToMinHeap(Heap h) { // ???
+
+    VPixel currentPixelInserted = h->pixelsInHeap[h->current_size];
+    VPixel elementsInHeap = h->pixelsInHeap;
+
+    int parents = (h->current_size - 1) HEAP_MAX_PARENTS;
+    // if (size % 2 == 1) size++;
+    // [1 2 3 4 5 6 7 8] 
+
+    while (size > 1 && elementsInHeap[parents].px.energy > currentPixelInserted.px.energy) {
+        swap(elementsInHeap[parents], currentPixelInserted);
+
+        parents = (parents - 1) / HEAP_MAX_PARENTS;
+    }
 }
 
 void heap_DestroyHeap(Heap h) {
 
+    free(pixelsInHeap);
+    free(h);
 }
