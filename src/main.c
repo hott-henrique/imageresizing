@@ -54,6 +54,11 @@ int main(int argc, char ** argv) {
 		   args.linesToRemove,
 		   args.operator);
 
+	if (NULL == args.inputFilePath) {
+		fprintf(stderr, "Please provide an input file.\n");
+		return EXIT_FAILURE;
+	}
+
 #if defined(TIMING)
 	timingstdout = fopen("timing.out", "w");
 	t_PrintHeader(timingstdout);
@@ -92,7 +97,6 @@ int main(int argc, char ** argv) {
 
 	fclose(timingstdout);
 #endif
-
 	return EXIT_SUCCESS;
 }
 
