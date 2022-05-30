@@ -19,6 +19,6 @@ void t_Start(timing * t);
 void t_Finalize(timing * t);
 
 void t_PrintHeader(FILE * f);
-void t_Print(timing * t, FILE * f, const char * functionName);
+void t_Print(timing * t, FILE * f, const char * functionName, int inputSize);
 
 #endif
