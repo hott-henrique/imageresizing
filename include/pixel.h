@@ -23,14 +23,6 @@ struct pixel_t {
 typedef struct pixel_t pixel;
 typedef struct pixel_t * Pixel;
 
-struct vpixel_t {
-	pixel px;
-	struct vpixel_t ** adjacent;
-};
-
-typedef struct vpixel_t vpixel;
-typedef vpixel * VPixel;
-
 void px_CalculateLI(Pixel p);
 float px_CalculateEnergy(float liRegion[3][3], char operator);
 
