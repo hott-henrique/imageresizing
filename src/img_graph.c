@@ -315,27 +315,15 @@ void gimg_RemoveColumns(GImage gi, int amount, char energyOp) { // o(n^3)
 	timing t;
 	t_Start(&t);
 #endif
-	gimg_CalculateEnergies(gi, energyOp);
+	for (int i = 0; i < amount; i++) {
+		gimg_CalculateEnergies(gi, energyOp);
 
-	printf("Energies:\n");
-	for (int x = 0; x < gi->currentHeight; x++) {
-		for (int y = 0; y < gi->currentWidth; y++) {
-			int index = INDEX(x, y, gi->allocatedWidth);
-			printf("%.1f ", gi->vpixels[index].px.energy);
-		}
-		printf("\n");
+		gimg_Djikstra(gi);
+
+		gimg_RemovePath(gi);
+
+		gi->currentWidth--;
 	}
-	printf("-----------------------------------\n");
-	heapTest(gi);
-	//for (int i = 0; i < amount; i++) {
-	//	gimg_CalculateEnergies(gi, energyOp);
-
-	//	gimg_Djikstra(gi);
-
-	//	gimg_RemovePath(gi);
-
-	//	gi->currentWidth--;
-	//}
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
