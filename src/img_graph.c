@@ -1,14 +1,22 @@
 #include "img_graph.h"
-
 #include "pixel.h"
 #include "ppm.h"
 #include "mlimits.h"
-#include "heap.h"
-#include "stack.h"
+#include "timing.h"
+extern FILE * timingstdout;
 
 #include <stdlib.h>
 #include <stdio.h>
 #include <float.h>
+
+struct vpixel_t {
+	float pathCost;
+	short previous;
+	VPixel * adjacent;
+};
+
+typedef struct vpixel_t vpixel;
+typedef struct vpixel_t * VPixel;
 
 struct img_graph_t {
 	int currentWidth, currentHeight; 
@@ -35,23 +43,17 @@ static void gimg_SetVPixelReferences(GImage gi, int x, int y);
 
 static void gimg_Transpose(GImage gi);
 
-static void gimg_CalculateEnergies(GImage gi, char operator);
-static void gimg_CalculateEnergy(GImage gi, int x, int y, char operator);
+static void gimg_CalculateEnergies(GImage gi, char energyOp);
+static void gimg_CalculateEnergy(GImage gi, int x, int y, char energyOp);
 
-static void gimg_CalculatePaths(GImage gi);
-static void gimg_CalculateAllPathsInLine(GImage gi, int x);
-static void gimg_CalculatePathOfPixel(GImage, int x, int y);
-
-
-static void gimg_CalculateAllPathsInColumn(GImage gi, int y);
-
+static void gimg_Djikstra(GImage gi);
 
 static int gimg_GetBestPath(GImage gi);
 
 static void gimg_RemovePath(GImage gi, int index);
 static void gimg_RemovePixel(GImage gi, int x, int y);
 
-static float gimg_GetBestPossiblePathValue(GImage gi, char operator);
+static float gimg_GetBestPossiblePathValue(GImage gi, char energyOp);
 
 GImage gimg_Load(const char * filePath) { // max(O(n)O(n^2)) -> O(n^2)
 #ifdef TIMING
@@ -100,7 +102,7 @@ static void gimg_SetPixel(int x, int y, pixel p, void * giPtr) { // O(1)
 	px->b = p.b;
 
 	px_CalculateLI(px); // O(1)
-	px->next = NOT_CHECKED_YET;
+	//px->next = NOT_CHECKED_YET;
 }
 
 static void gimg_SetAllReferences(GImage gi) { // O(n^2)
@@ -113,7 +115,6 @@ static void gimg_SetAllReferences(GImage gi) { // O(n^2)
 			gimg_SetVPixelReferences(gi, x, y);
 		}
 	}
-											   //
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
@@ -149,50 +150,49 @@ static void gimg_SetVPixelReferences(GImage gi, int x, int y) { // O(1)
 	vpx->adjacent[BR] = &gi->vpixels[indexBR];
 }
 
-void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns, char operator) {
+void gimg_RemoveLinesAndColumns(GImage gi, int amountLines, int amountColumns, char energyOp) {
 #ifdef TIMING
 	timing t;
 	t_Start(&t);
 #endif
 	while (amountLines != 0 && amountColumns != 0) {
-		float columnBestPathValue = gimg_GetBestPossiblePathValue(gi, operator);
+		float columnBestPathValue = gimg_GetBestPossiblePathValue(gi, energyOp);
 
 		gimg_Transpose(gi);
 
-		float lineBestPathValue = gimg_GetBestPossiblePathValue(gi, operator);
+		float lineBestPathValue = gimg_GetBestPossiblePathValue(gi, energyOp);
 
 		if (lineBestPathValue < columnBestPathValue) {
-			gimg_RemoveColumns(gi, 1, operator);
+			gimg_RemoveColumns(gi, 1, energyOp);
 			gimg_Transpose(gi);
 			amountLines--;
 		} else {
 			gimg_Transpose(gi);
-			gimg_RemoveColumns(gi, 1, operator);
+			gimg_RemoveColumns(gi, 1, energyOp);
 			amountColumns--;
 		}
 	}
 
-	gimg_RemoveLines(gi, amountLines, operator);
-	gimg_RemoveColumns(gi, amountColumns, operator);
-											   //
+	gimg_RemoveLines(gi, amountLines, energyOp);
+	gimg_RemoveColumns(gi, amountColumns, energyOp);
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
 #endif
 }
 
-static float gimg_GetBestPossiblePathValue(GImage gi, char operator) {
+static float gimg_GetBestPossiblePathValue(GImage gi, char energyOp) {
 #ifdef TIMING
 	timing t;
 	t_Start(&t);
 #endif
-	gimg_CalculateEnergies(gi, operator);
+	gimg_CalculateEnergies(gi, energyOp);
 
-	gimg_CalculatePaths(gi);
+	gimg_Djikstra(gi);
 
-	int pathIndex = gimg_GetBestPath(gi);
-	float pathValue = gi->vpixels[INDEX(0, pathIndex, gi->currentWidth)].px.energyInThatPath;
-											   //
+	//int pathIndex = gimg_GetBestPath(gi);
+	//float pathValue = gi->vpixels[INDEX(0, pathIndex, gi->currentWidth)].px.energyInThatPath;
+	float pathValue = 0.0f;										   //
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
@@ -200,14 +200,14 @@ static float gimg_GetBestPossiblePathValue(GImage gi, char operator) {
 	return pathValue;
 }
 
-void gimg_RemoveLines(GImage gi, int amount, char operator) {
+void gimg_RemoveLines(GImage gi, int amount, char energyOp) {
 #ifdef TIMING
 	timing t;
 	t_Start(&t);
 #endif
 	gimg_Transpose(gi);
 
-	gimg_RemoveColumns(gi, amount, operator); // O(n^3)
+	gimg_RemoveColumns(gi, amount, energyOp); // O(n^3)
 
 	gimg_Transpose(gi);
 											   //
@@ -268,15 +268,15 @@ static void gimg_Transpose(GImage gi) {
 #endif
 }
 
-void gimg_RemoveColumns(GImage gi, int amount, char operator) { // o(n^3) 
+void gimg_RemoveColumns(GImage gi, int amount, char energyOp) { // o(n^3) 
 #ifdef TIMING
 	timing t;
 	t_Start(&t);
 #endif
 	for (int i = 0; i < amount; i++) { // No pior caso, eu removo todas as colunas - 1 -> O(n) * max(O(n)O(n^2))
-		gimg_CalculateEnergies(gi, operator);
+		gimg_CalculateEnergies(gi, energyOp);
 
-		gimg_CalculatePaths(gi); // O(n^2)
+		gimg_Djikstra(gi); // O(n^2)
 
 		int index = gimg_GetBestPath(gi); // O(n)
 
@@ -291,14 +291,14 @@ void gimg_RemoveColumns(GImage gi, int amount, char operator) { // o(n^3)
 
 }
 
-static void gimg_CalculateEnergies(GImage gi, char operator) { // O(n^2)
+static void gimg_CalculateEnergies(GImage gi, char energyOp) { // O(n^2)
 #ifdef TIMING
 	timing t;
 	t_Start(&t);
 #endif
 	for (int x = 0; x < gi->currentHeight; x++) {
 		for (int y = 0; y < gi->currentWidth; y++) {
-			gimg_CalculateEnergy(gi, x, y, operator); // O(1)
+			gimg_CalculateEnergy(gi, x, y, energyOp); // O(1)
 		}
 	}
 #ifdef TIMING
@@ -308,7 +308,7 @@ static void gimg_CalculateEnergies(GImage gi, char operator) { // O(n^2)
 
 }
 
-static void gimg_CalculateEnergy(GImage gi, int x, int y, char operator) { // O(1)
+static void gimg_CalculateEnergy(GImage gi, int x, int y, char energyOp) { // O(1)
 	int index = INDEX(x, y, gi->allocatedWidth);
 	VPixel center = &gi->vpixels[index];
 	VPixel * adjacent = center->adjacent;
@@ -319,138 +319,36 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y, char operator) { // O(
 		{ adjacent[BL]->px.li, adjacent[B]->px.li, adjacent[BR]->px.li }
 	};
 
-	center->px.energy = px_CalculateEnergy(region, operator); // O(1)
+	center->px.energy = px_CalculateEnergy(region, energyOp); // O(1)
 }
 
-static void gimg_CalculatePaths(GImage gi) {
-	
-	for (int y = 0; y < gi->currentWidth; y++) {
-		gimg_CalculateAllPathsInColumn(gi, y);
-	}
-
+static void gimg_Djikstra(GImage gi) {
+	printf("Call: %s\n", __func__);
 }
-
-static void gimg_CalculateAllPathsInColumn(GImage gi, int y) {
-
-	// Origin index
-	int originIndex = INDEX(0, y, gi->allocatedWidth);
-	VPixel originPixel = &gi->vpixels[originIndex];
-
-	// Build heap
-	size_t size = gi->currentWidth * currentHeight;
-	Heap heapGrath = heap_BuildHeap(size);
-
-	// Set all pixels to infinity value in the path
-	gimg_SetAllPixelsToInfinity(gi);
-
-	// Set all paths not checked yet to deep search
-	mimg_SetAllPathsNotChecked(GImage gi);
-
-	// Deep search to map the tree
-	gimg_GrathToHeap(gi, heapGrath, originIndex);
-
-	for (int x = 1; x < gi->currentWidth; x++) {
-
-
-	}
-}
-
-static void gimg_GrathToHeap(Gimage gi, Heap h, int originIndex) {
-
-	VPixel originPixel = gi->vpixels[originIndex];
-	while () {
-
-	}
-
-}
-
-static void gimg_SetAllPixelsToInfinity(GImage gi) {
-
-	for (int x = 0; x < gi->currentHeight; x++) {
-		for (int y = 0; y < gi->currentWidth; y++) {
-			int index = INDEX(x, y, gi->allocatedWidth);
-			gi->vpixels[index].px.energyInThatPath = FLT_MAX;
-		}
-	}
-}
-
-static void mimg_SetAllPathsNotChecked(GImage gi) { 
-	for (int y = 0; y < gi->currentWidth; y++) {
-		for (int x = 0; x < gi->currentHeight; x++) {
-			int index = INDEX(x, y, gi->allocatedWidth);
-			Pixel p = &gi->vpixels[index];
-			p->next = NOT_CHECKED_YET;
-		}
-	}
-}
-
-// static void gimg_CalculatePaths(GImage gi) { // O(n^2)
-// 	int currentHeight = gi->currentHeight - 1;
-// 	for (int x = currentHeight; x >= 0; x--){ 
-// 		gimg_CalculateAllPathsInLine(gi, x); // O(n)
-// 	}
-// }
-
-// static void gimg_CalculateAllPathsInLine(GImage gi, int x) { // O(n)
-// 	for (int y = 0; y < gi->currentWidth; y++) {
-// 		gimg_CalculatePathOfPixel(gi, x, y); // O(1)
-// 	}	
-// }
-
-// static void gimg_CalculatePathOfPixel(GImage gi, int x, int y) { // O(1)
-// 	int index = INDEX(x, y, gi->allocatedWidth);
-// 	VPixel p = &gi->vpixels[index];
-
-// 	int currentHeight = gi->currentHeight - 1;
-// 	if (currentHeight == x) {
-// 		p->px.energyInThatPath = p->px.energy;
-// 		p->px.next = LAST_PIXEL;
-// 		return;
-// 	}
-
-// 	int minIndex;
-
-// 	float cheapestPath = 0.0f;
-
-// 	for (int adjacentIndex = BL; adjacentIndex <= BR; adjacentIndex++) {
-// 		float pathCost = p->adjacent[adjacentIndex]->px.energyInThatPath;
-
-// 		if (adjacentIndex == BL || pathCost < cheapestPath) {
-// 			cheapestPath = pathCost;
-// 			minIndex = adjacentIndex;
-// 		} 
-// 	}
-
-// 	static short paths[3] = { LEFT, CENTER, RIGHT };
-	
-// 	p->px.next = paths[minIndex];
-
-// 	p->px.energyInThatPath = cheapestPath + p->px.energy;
-// }
 
 static int gimg_GetBestPath(GImage gi) { // O(n)
 #ifdef TIMING
 	timing t;
 	t_Start(&t);
 #endif
-	int ginIndex = 0;
+	int minIndex = 0;
 
 	for (int y = 1; y < gi->currentWidth; y++) { // O(n)
-		int indexMinEnergyAdjacent = INDEX(0, ginIndex, gi->allocatedWidth); 
-		int indexCurrentEnergyAdjacent = INDEX(0, y, gi->allocatedWidth);
+		//int indexMinEnergyAdjacent = INDEX(0, minIndex, gi->allocatedWidth); 
+		//int indexCurrentEnergyAdjacent = INDEX(0, y, gi->allocatedWidth);
 
-		float ginEnergy = gi->vpixels[indexMinEnergyAdjacent].px.energyInThatPath;
-		float currentEnergy = gi->vpixels[indexCurrentEnergyAdjacent].px.energyInThatPath;
+		//float ginEnergy = gi->vpixels[indexMinEnergyAdjacent].px.energyInThatPath;
+		//float currentEnergy = gi->vpixels[indexCurrentEnergyAdjacent].px.energyInThatPath;
 
-		if (currentEnergy < ginEnergy) {
-			ginIndex = y;
-		}
+		//if (currentEnergy < ginEnergy) {
+		//	minIndex = y;
+		//}
 	}
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
 #endif
-	return ginIndex;
+	return minIndex;
 }
 
 static void gimg_RemovePath(GImage gi, int y) { // O(n^2)
@@ -459,10 +357,11 @@ static void gimg_RemovePath(GImage gi, int y) { // O(n^2)
 	t_Start(&t);
 #endif
 	for (int x = 0; x < gi->currentHeight; x++) { // O(n*n) -> O(n^2)
-		int index = INDEX(x, y, gi->allocatedWidth);
-		VPixel p = &gi->vpixels[index];
+		//int index = INDEX(x, y, gi->allocatedWidth);
+		//VPixel p = &gi->vpixels[index];
 
-		int pathToFollow = p->px.next;
+		//int pathToFollow = p->px.next;
+		int pathToFollow = 0;
 
 		gimg_RemovePixel(gi, x, y); // O(n)
 

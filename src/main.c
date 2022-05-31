@@ -77,9 +77,6 @@ int main(int argc, char ** argv) {
 		img_RemoveColumns(i, args.columnsToRemove, args.operator);
 	}
 
-	printf("Dale.\n");
-
-
 	FILE * f = NULL == args.outputFilePath ? stdout : fopen(args.outputFilePath, "w");
 
 	if (NULL == f) {

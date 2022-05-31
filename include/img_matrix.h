@@ -7,9 +7,9 @@ typedef struct img_matrix_t * MImage;
 
 MImage mimg_Load(const char * filePath);
 
-void mimg_RemoveLines(MImage mi, int amount, char operator);
-void mimg_RemoveColumns(MImage mi, int amount, char operator);
-void mimg_RemoveLinesAndColumns(MImage mi, int amountLines, int amountColumns, char operator);
+void mimg_RemoveLines(MImage mi, int amount, char energyOp);
+void mimg_RemoveColumns(MImage mi, int amount, char energyOp);
+void mimg_RemoveLinesAndColumns(MImage mi, int amountLines, int amountColumns, char energyOp);
 
 void mimg_Print(MImage mi, FILE * f);
 
