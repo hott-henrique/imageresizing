@@ -16,7 +16,6 @@ struct vpixel_t {
 	pixel px;
 
 	VPixel * adjacent;
-	int countPathAdjacent;
 
 	float pathCost;
 	VPixel previous;
@@ -31,7 +30,8 @@ struct img_graph_t {
 	int allocatedWidth, allocatedHeight; 
 	int maxComponentValue;
 	VPixel vpixels;
-	VPixel dest;
+
+	VPixel startingPoint;
 };
 
 enum AdjacentIndices {
@@ -39,8 +39,6 @@ enum AdjacentIndices {
 	R = 7, 			L = 3,
 	BL = 0, B = 1, BR = 2,
 };
-
-static void gimg_AllocateDestine(GImage gi);
 
 static void gimg_SetPixel(int x, int y, pixel p, void * giPtr);
 
@@ -52,7 +50,7 @@ static void gimg_Transpose(GImage gi);
 static void gimg_CalculateEnergies(GImage gi, char energyOp);
 static void gimg_CalculateEnergy(GImage gi, int x, int y, char energyOp);
 
-static void gimg_Djikstra(GImage gi);
+static void gimg_Djikstra(GImage gi, VPixel startingPoint);
 
 static void gimg_RemovePath(GImage gi);
 static void gimg_RemovePixel(GImage gi, int x, int y);
@@ -92,11 +90,8 @@ GImage gimg_Load(const char * filePath) { // max(O(n)O(n^2)) -> O(n^2)
 			int index = INDEX(x, y, gi->allocatedWidth);
 			VPixel vp = &gi->vpixels[index];
 			vp->adjacent = (VPixel *) malloc(sizeof(VPixel) * 8);
-			vp->countPathAdjacent = 3;
 		}
 	}
-
-	gimg_AllocateDestine(gi);
 
 	ppm_ForEachPixel(filePath, gimg_SetPixel, gi); // O(n^2)
 
@@ -106,25 +101,6 @@ GImage gimg_Load(const char * filePath) { // max(O(n)O(n^2)) -> O(n^2)
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
 #endif
 	return gi;
-}
-
-static void gimg_AllocateDestine(GImage gi) {
-	VPixel dest = (VPixel) malloc(sizeof(vpixel));
-	gi->dest = dest;
-	
-	dest->position.x = -1;
-	dest->position.y = -1;
-
-	dest->px.energy = 0.0f;
-	dest->pathCost = FLT_MAX;
-
-	dest->adjacent = (VPixel *) malloc(sizeof(VPixel) * gi->currentWidth);
-	dest->countPathAdjacent = gi->currentWidth;
-	for (int i = 0; i < gi->allocatedWidth; i++) {
-			int index = INDEX(gi->currentHeight - 1, i, gi->allocatedWidth);
-			VPixel vp = &gi->vpixels[index];
-			dest->adjacent[i] = vp;
-	}
 }
 
 static void gimg_SetPixel(int x, int y, pixel p, void * giPtr) { // O(1)
@@ -228,14 +204,15 @@ static float gimg_GetBestPossiblePathCost(GImage gi, char energyOp) {
 #endif
 	gimg_CalculateEnergies(gi, energyOp);
 
-	gimg_Djikstra(gi);
+	gimg_Djikstra(gi, NULL);
 
-	float pathCost = gi->dest->pathCost;
+	printf("Not implemented yet: %s\n", __func__);
+	exit(0);
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
 #endif
-	return pathCost;
+	return 0;
 }
 
 void gimg_RemoveLines(GImage gi, int amount, char energyOp) {
@@ -299,11 +276,6 @@ static void gimg_Transpose(GImage gi) {
 	}
 
 	gimg_SetAllReferences(gi);
-
-	free(gi->dest->adjacent);
-	free(gi->dest);
-
-	gimg_AllocateDestine(gi);
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
@@ -318,7 +290,7 @@ void gimg_RemoveColumns(GImage gi, int amount, char energyOp) { // o(n^3)
 	for (int i = 0; i < amount; i++) {
 		gimg_CalculateEnergies(gi, energyOp);
 
-		gimg_Djikstra(gi);
+		gimg_Djikstra(gi, gi->startingPoint);
 
 		gimg_RemovePath(gi);
 
@@ -360,7 +332,7 @@ static void gimg_CalculateEnergy(GImage gi, int x, int y, char energyOp) { // O(
 	center->px.energy = px_CalculateEnergy(region, energyOp); // O(1)
 }
 
-static void gimg_Djikstra(GImage gi) {
+static void gimg_Djikstra(GImage gi, VPixel startingPoint) {
 #ifdef TIMING
 	timing t;
 	t_Start(&t);
@@ -401,14 +373,13 @@ static void gimg_RemovePath(GImage gi) { // O(n^2)
 	t_Start(&t);
 #endif
 	printf("Call: %s\n", __func__);
-	VPixel current = gi->dest->previous;	
+	VPixel current = NULL;	
 	while (NULL != current) {
 		int x = current->position.x;
 		int y = current->position.y;
 		
 		current = current->previous;
 
-		printf("Removing: %d %d\n", x, y);
 		gimg_RemovePixel(gi, x, y);
 	}
 #ifdef TIMING
@@ -422,11 +393,11 @@ static void gimg_RemovePixel(GImage gi, int x, int y) { // O(n)
 		int index = INDEX(x, y, gi->allocatedWidth);
 		VPixel p = &gi->vpixels[index];
 
-		p->px.r = p->adjacent[3]->px.r;
-		p->px.g = p->adjacent[3]->px.g;
-		p->px.b = p->adjacent[3]->px.b;
+		p->px.r = p->adjacent[R]->px.r;
+		p->px.g = p->adjacent[R]->px.g;
+		p->px.b = p->adjacent[R]->px.b;
 
-		p->px.li = p->adjacent[3]->px.li;
+		p->px.li = p->adjacent[R]->px.li;
 
 		y++;
 	}
@@ -454,9 +425,6 @@ void gimg_Print(GImage gi, FILE * f) { // O(n^2)
 }
 
 void gimg_Free(GImage gi) { // O(n^2)
-	free(gi->dest->adjacent);
-	free(gi->dest);
-
 	for (int x = 0; x < gi->allocatedHeight; x++) {
 		for (int y = 0; y < gi->allocatedWidth; y++) {
 			int index = INDEX(x, y, gi->allocatedWidth);
@@ -464,7 +432,7 @@ void gimg_Free(GImage gi) { // O(n^2)
 			free(vp->adjacent);
 		}
 	}
-
+	printf("Tem que liberar o ponto inicial.\n");
 	free(gi->vpixels);
 	free(gi);
 }
@@ -490,8 +458,8 @@ void hp_Populate(HeapV h, GImage gi) {
 			hp_Insert(h, &vpx);
 		}
 	}
-	VPixel vpxDest = gi->dest;
-	hp_Insert(h, &vpxDest);
+	VPixel vpxInitial = gi->startingPoint;
+	hp_Insert(h, &vpxInitial);
 }
 
 void hp_Insert(HeapV h, VPixel * vpx) {
