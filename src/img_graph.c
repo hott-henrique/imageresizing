@@ -16,6 +16,7 @@ struct vpixel_t {
 	pixel px;
 
 	VPixel * adjacent;
+	int szAdjacent;
 
 	float pathCost;
 	VPixel previous;
@@ -30,15 +31,16 @@ struct img_graph_t {
 	int allocatedWidth, allocatedHeight; 
 	int maxComponentValue;
 	VPixel vpixels;
-
 	VPixel startingPoint;
 };
 
 enum AdjacentIndices {
 	TL = 6,	T = 5, TR = 4,
-	R = 7, 			L = 3,
+	L = 7, 			R = 3,
 	BL = 0, B = 1, BR = 2,
 };
+
+static void gimg_AllocateStartingPoint(GImage gi);
 
 static void gimg_SetPixel(int x, int y, pixel p, void * giPtr);
 
@@ -90,17 +92,36 @@ GImage gimg_Load(const char * filePath) { // max(O(n)O(n^2)) -> O(n^2)
 			int index = INDEX(x, y, gi->allocatedWidth);
 			VPixel vp = &gi->vpixels[index];
 			vp->adjacent = (VPixel *) malloc(sizeof(VPixel) * 8);
+			vp->szAdjacent = 3;
 		}
 	}
 
 	ppm_ForEachPixel(filePath, gimg_SetPixel, gi); // O(n^2)
 
 	gimg_SetAllReferences(gi); // O(n^2)
+
+	gimg_AllocateStartingPoint(gi);
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
 #endif
 	return gi;
+}
+
+static void gimg_AllocateStartingPoint(GImage gi) {
+	gi->startingPoint = (VPixel) malloc(sizeof(vpixel));
+	gi->startingPoint->adjacent = (VPixel *) malloc(sizeof(VPixel) * gi->currentWidth);
+	gi->startingPoint->szAdjacent = gi->currentWidth;	
+
+	gi->startingPoint->position.x = -1;
+	gi->startingPoint->position.y = -1;
+
+	gi->startingPoint->px.energy = 0.0f;
+
+	for (int y = 0; y < gi->currentWidth; y++) {
+		int index =  INDEX(0, y, gi->currentWidth);
+		gi->startingPoint->adjacent[y] = &gi->vpixels[index];
+	}
 }
 
 static void gimg_SetPixel(int x, int y, pixel p, void * giPtr) { // O(1)
@@ -204,7 +225,7 @@ static float gimg_GetBestPossiblePathCost(GImage gi, char energyOp) {
 #endif
 	gimg_CalculateEnergies(gi, energyOp);
 
-	gimg_Djikstra(gi, NULL);
+	gimg_Djikstra(gi, gi->startingPoint);
 
 	printf("Not implemented yet: %s\n", __func__);
 	exit(0);
@@ -243,6 +264,8 @@ static void gimg_Transpose(GImage gi) {
 			int indexN = INDEX(x, y, gi->allocatedWidth);
 			int indexT = INDEX(y, x, gi->allocatedHeight);
 			newVertices[indexT] = gi->vpixels[indexN];
+			newVertices[indexT].position.x = x;
+			newVertices[indexT].position.y = y;
 		}
 	}
 
@@ -265,6 +288,9 @@ static void gimg_Transpose(GImage gi) {
 	}
 	free(gi->vpixels);
 
+	free(gi->startingPoint->adjacent);
+	free(gi->startingPoint);
+
 	gi->vpixels = newVertices;
 
 	for (int x = 0; x < gi->allocatedHeight; x++) {
@@ -276,6 +302,8 @@ static void gimg_Transpose(GImage gi) {
 	}
 
 	gimg_SetAllReferences(gi);
+
+	gimg_AllocateStartingPoint(gi);
 #ifdef TIMING
 	t_Finalize(&t);
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
@@ -294,7 +322,7 @@ void gimg_RemoveColumns(GImage gi, int amount, char energyOp) { // o(n^3)
 
 		gimg_RemovePath(gi);
 
-		gi->currentWidth--;
+		//gi->currentWidth--;
 	}
 #ifdef TIMING
 	t_Finalize(&t);
@@ -338,12 +366,41 @@ static void gimg_Djikstra(GImage gi, VPixel startingPoint) {
 	t_Start(&t);
 #endif
 	printf("Call: %s\n", __func__);
+
+	for (int x = 0; x < gi->currentHeight; x++) {
+		for (int y = 0; y < gi->currentWidth; y++) {
+			int index = INDEX(x, y, gi->allocatedWidth);
+			VPixel v = &gi->vpixels[index];	
+			v->pathCost = FLT_MAX;
+			v->previous = NULL;
+		}
+	}
+
+	startingPoint->pathCost = 0.0f;	
+	startingPoint->previous = NULL;
+
+	HeapV h = hp_New(gi);
+
+	while (h->size > 0) {
+		printf("%d\n", h->size);
+		VPixel u = hp_Pop(h);
+		if (u->position.y == gi->currentHeight - 1) {
+			continue;
+		}
+
+		for (int i = 0; i < u->szAdjacent; i++) {
+			VPixel v = u->adjacent[i];
+			float newPathCost = u->pathCost + u->px.energy;
+			if (v->pathCost > newPathCost) {
+				hp_SetVertexCost(h, v, newPathCost);
+				v->previous = u;
+			}
+		}
+	}
+
+	hp_Free(h);
 	/* for each vertex v in gi:
-	 * 	if v.x == 0:
-	 *		v.pathCost = 0
-	 * 	else:
-	 * 		v.pathCost = max_float
-	 *	end if
+	 * 	v.pathCost = max_float
 	 *	v.previous = NULL
 	 * end for
 	 *
@@ -372,15 +429,35 @@ static void gimg_RemovePath(GImage gi) { // O(n^2)
 	timing t;
 	t_Start(&t);
 #endif
-	printf("Call: %s\n", __func__);
-	VPixel current = NULL;	
-	while (NULL != current) {
-		int x = current->position.x;
-		int y = current->position.y;
-		
-		current = current->previous;
+	printf("Not implemented yet: %s\n", __func__);
 
-		gimg_RemovePixel(gi, x, y);
+	float minPathCost = 0;
+	int minIndex = 0;
+
+	int x = gi->currentHeight - 1;
+	for (int y = 0; y < gi->currentWidth; y++) {
+		int index = INDEX(x, y, gi->allocatedWidth);
+		VPixel v = &gi->vpixels[index];	
+		if (y == 0 || v->pathCost < minPathCost) {
+			minPathCost = v->pathCost;
+			minIndex = y;
+		}
+	}
+
+	VPixel current = &gi->vpixels[INDEX(x, minIndex, gi->allocatedWidth)];
+	while (current != NULL) {
+		int xpx = current->position.x;
+		int ypx = current->position.y;
+
+		if (xpx == -1 || ypx == 1) break;
+
+		//gimg_RemovePixel(gi, xpx, ypx);
+		
+		current->px.r = 0;
+		current->px.g = 255;
+		current->px.b = 0;
+
+		current = current->previous;
 	}
 #ifdef TIMING
 	t_Finalize(&t);
@@ -425,6 +502,9 @@ void gimg_Print(GImage gi, FILE * f) { // O(n^2)
 }
 
 void gimg_Free(GImage gi) { // O(n^2)
+	free(gi->startingPoint->adjacent);
+	free(gi->startingPoint);
+
 	for (int x = 0; x < gi->allocatedHeight; x++) {
 		for (int y = 0; y < gi->allocatedWidth; y++) {
 			int index = INDEX(x, y, gi->allocatedWidth);
@@ -432,7 +512,7 @@ void gimg_Free(GImage gi) { // O(n^2)
 			free(vp->adjacent);
 		}
 	}
-	printf("Tem que liberar o ponto inicial.\n");
+
 	free(gi->vpixels);
 	free(gi);
 }
@@ -440,7 +520,7 @@ void gimg_Free(GImage gi) { // O(n^2)
 HeapV hp_New(GImage gi) {
 	HeapV h = (HeapV) malloc(sizeof(struct heap_vertex_t));
 
-	/* + 2: 1 because it's a heap, and the other is for the destine vertex. */
+	/* + 2: 1 because it's a heap, and the other is for the startingPoint. */
 	int size = (gi->currentWidth * gi->currentHeight) + 2;
 
 	h->vertices = (VPixel *) malloc(sizeof(VPixel) * size);
@@ -451,6 +531,7 @@ HeapV hp_New(GImage gi) {
 }
 
 void hp_Populate(HeapV h, GImage gi) {
+	hp_Insert(h, &gi->startingPoint);
 	for (int x = 0; x < gi->currentHeight; x++) {
 		for (int y = 0; y < gi->currentWidth; y++) {
 			int index = INDEX(x, y, gi->currentWidth);
@@ -458,8 +539,6 @@ void hp_Populate(HeapV h, GImage gi) {
 			hp_Insert(h, &vpx);
 		}
 	}
-	VPixel vpxInitial = gi->startingPoint;
-	hp_Insert(h, &vpxInitial);
 }
 
 void hp_Insert(HeapV h, VPixel * vpx) {
