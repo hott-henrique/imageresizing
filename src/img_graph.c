@@ -429,8 +429,6 @@ static void gimg_RemovePath(GImage gi) { // O(n^2)
 	timing t;
 	t_Start(&t);
 #endif
-	printf("Not implemented yet: %s\n", __func__);
-
 	float minPathCost = 0;
 	int minIndex = 0;
 
@@ -574,6 +572,10 @@ VPixel hp_Pop(HeapV h) {
 }
 
 void hp_Sort(HeapV h) {
+#ifdef TIMING
+	timing t;
+	t_Start(&t);
+#endif
 	int current = h->size / 2;
 	for (int i = current; i >= 1; i--) {
 		int firstChild = i * 2;
@@ -588,6 +590,10 @@ void hp_Sort(HeapV h) {
 			hp_Swap(vpxCurrent, &h->vertices[indexToSwap]);
 		}
 	}
+#ifdef TIMING
+	t_Finalize(&t);
+	t_Print(&t, timingstdout, __func__, 0);
+#endif
 }
 
 void hp_SetVertexCost(HeapV h, VPixel vpx, int value) {
