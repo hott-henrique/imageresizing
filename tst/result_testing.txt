@@ -1,0 +1,7 @@
+File | Result
+./128_image.ppm	OK
+./16_image.ppm	OK
+./32_image.ppm	OK
+./4_image.ppm	NOK
+./64_image.ppm	NOK
+./8_image.ppm	NOK

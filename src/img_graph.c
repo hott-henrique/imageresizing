@@ -60,6 +60,7 @@ static void gimg_RemovePixel(GImage gi, int x, int y);
 static float gimg_GetBestPossiblePathCost(GImage gi, char energyOp);
 
 typedef struct heap_vertex_t {
+	GImage img;
 	int * positions;
 	VPixel vertices;
 	int size;
@@ -68,11 +69,12 @@ typedef struct heap_vertex_t {
 
 HeapV hp_New(GImage gi);
 void hp_Free(HeapV h);
-void hp_Populate(HeapV h, GImage gi);
+void hp_Populate(HeapV h);
 void hp_Insert(HeapV h, vpixel vpx);
 vpixel hp_Pop(HeapV h);
 void hp_Sort(HeapV h);
-void hp_Swap(VPixel a, VPixel b);
+void hp_Swap(HeapV h, int indexA, int indexB);
+void hp_UpdateVPixel(HeapV h, VPixel v, vpixel u);
 
 GImage gimg_Load(const char * filePath) { // max(O(n)O(n^2)) -> O(n^2)
 #ifdef TIMING
@@ -365,15 +367,11 @@ static void gimg_Djikstra(GImage gi, VPixel startingPoint) {
 	timing t;
 	t_Start(&t);
 #endif
-	printf("Call: %s\n", __func__);
-
-	float value = 1.0f;
 	for (int x = 0; x < gi->currentHeight; x++) {
 		for (int y = 0; y < gi->currentWidth; y++) {
 			int index = INDEX(x, y, gi->allocatedWidth);
 			VPixel v = &gi->vpixels[index];	
-			//v->pathCost = FLT_MAX;
-			v->pathCost = value++;
+			v->pathCost = FLT_MAX / 2.0f;
 			v->previous = NULL;
 		}
 	}
@@ -385,20 +383,21 @@ static void gimg_Djikstra(GImage gi, VPixel startingPoint) {
 
 	while (h->size > 0) {
 		vpixel u = hp_Pop(h);
-		printf("From Pop: (%d, %d).pathCost = %f\n", u.position.x, u.position.y, u.pathCost);
+
 		if (u.position.x == gi->currentHeight - 1) {
 			continue;
 		}
 
 		for (int i = 0; i < u.szAdjacent; i++) {
 			VPixel v = u.adjacent[i];
-			//printf("\t%f\n", v->px.energy);
-			//float newPathCost = u->pathCost + v->px.energy;
-			//if (v->pathCost > newPathCost) {
-			//	v->pathCost = newPathCost;
-			//	v->previous = u;
-			//}
+
+			float newPathCost = u.pathCost + v->px.energy;
+
+			if (v->pathCost > newPathCost) {
+				hp_UpdateVPixel(h, v, u);
+			}
 		}
+
 		hp_Sort(h);
 	}
 
@@ -414,12 +413,6 @@ static void gimg_RemovePath(GImage gi) { // O(n^2)
 	timing t;
 	t_Start(&t);
 #endif
-	for (int x = 0; x < gi->currentHeight; x++) {
-		for (int y = 0; y < gi->currentWidth; y++) {
-			printf("%f ", gi->vpixels[INDEX(x, y, gi->currentWidth)].px.energy);
-		}
-		printf("\n");
-	}
 
 	float minPathCost = 0;
 	int minIndex = 0;
@@ -509,22 +502,26 @@ void gimg_Free(GImage gi) { // O(n^2)
 HeapV hp_New(GImage gi) {
 	HeapV h = (HeapV) malloc(sizeof(struct heap_vertex_t));
 
+	h->img = gi;
+
 	/* + 2: 1 because it's a heap, and the other is for the startingPoint. */
-	int size = (gi->currentWidth * gi->currentHeight) + 2;
+	int size = (gi->allocatedWidth * gi->allocatedHeight) + 2;
 	h->capacity = size;
 
 	h->vertices = (VPixel) malloc(sizeof(vpixel) * size);
+	h->positions = (int *) malloc(sizeof(int) * size);
 	for ( int i = 0; i < size; i++) {
 		h->vertices[i].pathCost = FLT_MAX;
+		h->positions[i] = 0;
 	}
-	h->positions = (int *) malloc(sizeof(int) * size);
 	h->size = 0;
 
-	hp_Populate(h, gi);
+	hp_Populate(h);
 	return h;
 }
 
-void hp_Populate(HeapV h, GImage gi) {
+void hp_Populate(HeapV h) {
+	GImage gi = h->img;
 	hp_Insert(h, gi->startingPoint);
 	for (int x = 0; x < gi->currentHeight; x++) {
 		for (int y = 0; y < gi->currentWidth; y++) {
@@ -537,6 +534,11 @@ void hp_Populate(HeapV h, GImage gi) {
 void hp_Insert(HeapV h, vpixel vpx) {
 	h->size++;
 	h->vertices[h->size] = vpx;
+
+	if (vpx.position.x >= 0 && vpx.position.y >= 0) {
+		int indexPos = INDEX(vpx.position.x, vpx.position.y, h->img->allocatedWidth);
+		h->positions[indexPos] = h->size;
+	}
 
 	if (h->size == 1) return;
 
@@ -568,18 +570,21 @@ void hp_Sort(HeapV h) {
 		int firstChild = i * 2;
 		VPixel vpxFC = &h->vertices[firstChild];
 
-		if (firstChild < h->capacity && vpxCurrent->pathCost > vpxFC->pathCost) {
+		if (firstChild < h->capacity &&
+			vpxCurrent->pathCost > vpxFC->pathCost) {
 			minIndex = firstChild;
 		}
 
 		int secondChild = firstChild + 1;
 		VPixel vpxSC = &h->vertices[secondChild];
 
-		if (secondChild < h->capacity && vpxCurrent->pathCost > vpxSC->pathCost && vpxSC->pathCost < vpxFC->pathCost) {
+		if (secondChild < h->capacity &&
+			vpxCurrent->pathCost > vpxSC->pathCost &&
+			vpxSC->pathCost < vpxFC->pathCost) {
 			minIndex = secondChild;
 		}
 
-		if (minIndex) hp_Swap(vpxCurrent, &h->vertices[minIndex]);
+		if (minIndex) hp_Swap(h, i, minIndex);
 	}
 #ifdef TIMING
 	t_Finalize(&t);
@@ -587,10 +592,40 @@ void hp_Sort(HeapV h) {
 #endif
 }
 
-void hp_Swap(VPixel a, VPixel b) {
-	vpixel temp = *a;
-	*a = *b;
-	*b = temp;
+void hp_Swap(HeapV h, int indexA, int indexB) {
+	int allocatedWidth = h->img->allocatedWidth;
+
+	VPixel vA = &h->vertices[indexA];
+	VPixel vB = &h->vertices[indexB];
+
+	int indexA_Pos = INDEX(vA->position.x, vA->position.y, allocatedWidth);
+	int indexB_Pos = INDEX(vB->position.x, vB->position.y, allocatedWidth);
+
+	if (vA->position.x > 0 && vA->position.y > 0)
+		h->positions[indexA_Pos] = indexB;
+
+	if (vB->position.x > 0 && vB->position.y > 0)
+		h->positions[indexB_Pos] = indexA;
+
+	vpixel temp = *vA;
+	*vA = *vB;
+	*vB = temp;
+}
+
+void hp_UpdateVPixel(HeapV h, VPixel v, vpixel u) {
+	float newPathCost = u.pathCost + v->px.energy;
+
+	v->pathCost = newPathCost;
+
+	int indexPos = INDEX(v->position.x, v->position.y, h->img->allocatedWidth);
+	int indexHeap = h->positions[indexPos];
+
+	h->vertices[indexHeap].pathCost = newPathCost;
+
+	if (u.position.x < 0 || u.position.y < 0) return;
+
+	int indexPrevious = INDEX(u.position.x, u.position.y, h->img->allocatedWidth);
+	h->img->vpixels[indexPos].previous = &h->img->vpixels[indexPrevious];
 }
 
 void hp_Free(HeapV h) {
