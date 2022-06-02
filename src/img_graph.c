@@ -1,4 +1,5 @@
 #include "img_graph.h"
+
 #include "pixel.h"
 #include "ppm.h"
 #include "mlimits.h"
@@ -371,7 +372,7 @@ static void gimg_Djikstra(GImage gi, VPixel startingPoint) {
 		for (int y = 0; y < gi->currentWidth; y++) {
 			int index = INDEX(x, y, gi->allocatedWidth);
 			VPixel v = &gi->vpixels[index];	
-			v->pathCost = FLT_MAX / 2.0f;
+			v->pathCost = FLT_MAX;
 			v->previous = NULL;
 		}
 	}
