@@ -412,20 +412,17 @@ static void gimg_RemovePath(GImage gi) { // O(n^2)
 	timing t;
 	t_Start(&t);
 #endif
-
 	float minPathCost = 0;
 	int minIndex = 0;
 	int x = gi->currentHeight - 1;
 	for (int y = 0; y < gi->currentWidth; y++) {
 		int index = INDEX(x, y, gi->allocatedWidth);
 		VPixel v = &gi->vpixels[index];	
-		printf("%.1f ", v->pathCost);
 		if (y == 0 || v->pathCost < minPathCost) {
 			minPathCost = v->pathCost;
 			minIndex = y;
 		}
 	}
-	printf("\n");
 
 	VPixel current = &gi->vpixels[INDEX(x, minIndex, gi->allocatedWidth)];
 	while (current != NULL) {

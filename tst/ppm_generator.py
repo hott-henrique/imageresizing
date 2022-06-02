@@ -7,13 +7,13 @@ def generate_ppm(name, width, height):
         print('255', file=ppm)
         for x in range(0, height):
             for y in range(0, width):
-                r = randint(125, 175)
+                r = randint(0, 255)
                 g = 0 # randint(0, 255)
-                b = randint(125, 175)
+                b = randint(0, 255)
                 print(f'{r} {g} {b}', file=ppm)
 
 def main():
-    for x in range(2, 8):
+    for x in range(2, 9):
         n = pow(2, x)
         file_name = f'{n}_image.ppm'
         print(f'Generating: {file_name}')
