@@ -1,8 +1,9 @@
-rm *.ppm
+rm -f *.ppm
 
 python3 ppm_generator.py
 
 echo "File | Result" > result_testing.txt # File header
+echo "Timings:" > timing.txt
 
 for file in '.'/*
 do
@@ -11,10 +12,12 @@ do
 		echo "Testing: $file"
 
 		echo "Running matrix..."
-		./tp2 $file M -w 1 -o mresult.out
+		echo "Timing Matrix: $file" >> timing.txt
+		{ time ./tp2 $file M -w 1 -o mresult.out; } 2>> timing.txt
 
 		echo "Running graph..."
-		./tp2 $file G -w 1 -o gresult.out
+		echo "Timing Graph: $file" >> timing.txt
+		{ time ./tp2 $file G -w 1 -o gresult.out; } 2>> timing.txt
 
 		diff_results=$(diff mresult.out gresult.out)
 		len_diff=${#diff_results}

@@ -13,7 +13,7 @@ def generate_ppm(name, width, height):
                 print(f'{r} {g} {b}', file=ppm)
 
 def main():
-    for x in range(2, 9):
+    for x in range(6, 11):
         n = pow(2, x)
         file_name = f'{n}_image.ppm'
         print(f'Generating: {file_name}')
