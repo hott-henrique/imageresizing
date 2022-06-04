@@ -1,0 +1,25 @@
+Tempo em segundos.
+Grafo:
+gimg_Djikstra|4|0.000010
+gimg_Djikstra|8|0.000024
+gimg_Djikstra|16|0.000421
+gimg_Djikstra|32|0.000783
+gimg_Djikstra|64|0.005590
+gimg_Djikstra|128|0.019682
+gimg_Djikstra|256|0.136231
+gimg_Djikstra|512|0.971892
+gimg_Djikstra|1024|7.350359
+gimg_Djikstra|2048|56.390621
+gimg_Djikstra|4096|522.543884
+
+main|4|0.000137
+main|8|0.000262
+main|16|0.000473
+main|32|0.001975
+main|64|0.009897
+main|128|0.028565
+main|256|0.166558
+main|512|1.108680
+main|1024|7.833346
+main|2048|58.251541
+main|4096|529.906677

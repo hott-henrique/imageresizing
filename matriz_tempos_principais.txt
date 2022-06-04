@@ -1,0 +1,26 @@
+Tempos em segundos.
+Matriz:
+mimg_CalculatePaths|4|0.000001
+mimg_CalculatePaths|8|0.000007
+mimg_CalculatePaths|16|0.000012
+mimg_CalculatePaths|32|0.000104
+mimg_CalculatePaths|64|0.000411
+mimg_CalculatePaths|128|0.000736
+mimg_CalculatePaths|256|0.002978
+mimg_CalculatePaths|512|0.012168
+mimg_CalculatePaths|1024|0.048908
+mimg_CalculatePaths|2048|0.216322
+mimg_CalculatePaths|4096|1.044202
+
+main|4|0.000262
+main|8|0.000332
+main|16|0.000267
+main|32|0.001463
+main|64|0.003519
+main|128|0.010166
+main|256|0.026927
+main|512|0.140568
+main|1024|0.481022
+main|2048|2.195387
+main|4096|9.369337
+
