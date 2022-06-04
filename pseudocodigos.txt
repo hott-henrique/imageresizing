@@ -1,0 +1,77 @@
+Matrix:
+CalcularTodosOsCaminhos(matriz m):
+	para cada y em numeroDeColunas(m):
+		CalculaCaminhoDoPixel(m, 0, y);	
+	fim para cada
+fim CalcularTodosOsCaminhos
+
+# Procedimento recursivo:
+# 	Os valores de cada caminho são armazenado na primeira linha da matriz.
+CalculaCaminhoDoPixel(matriz m, inteiro x, inteiro y):
+	pixel p = m[x][y]
+
+	# Caso da programação dinâmica
+	se (status(p) != NAO_CHECADO):
+		retorna custoCaminho(p)
+	fim se
+
+	# Caso base da recursao
+	se (p pertence ultimaLinha(m)):
+		custoCaminho(p) = energia(p)
+		proximoPasso(p) = FINALIZAR_REMOCAO;
+	se nao:
+		para cada px a em possiveisAdjacentes(p):
+			menorCaminho = Inifinito
+
+			real novoCustoCaminho = CalculaCaminhoDoPixel(m, p.x, p.y)
+
+			se (primeiroAdj(p) OU novoCustoCaminho < menorCaminho):
+				proximoPasso(p) = direcao(p, a)
+			fim se
+		fim para cada
+
+		custoCaminho(p) = menorCaminho + energia(p)
+	fim se
+	
+	retorna custoCaminho(p)
+fim CalculaCaminhoDoPixel
+
+Graph:
+Djikstra(grafo g, vertice vInicial):
+	para cada vertice v em g:
+		custoCaminho(v) = Infinito
+		anterior(v) = Nulo
+
+	custoCaminho(vInicial) = 0
+	
+	# Cria heap que suporta até o maximo de vertices em g.
+	heap h = criaHeap(g)
+
+	insereNaHeap(h, vInicial)
+
+	enquanto (heapVazia(h) == Falso):
+		vertice u = heapRemoveMin(h)
+
+		se u não é da ultima linha da imagem:
+			para cada adjacente v em u:
+				# Agiliza o processo de reconstrução da heap.
+				# Pois não precisa checar valores infinitos.
+				se (estaNaHeap(h, u) == Falso):
+					insereNaHeap(h, u)
+				fim se
+
+				real novoCustoCaminho = custoCaminho(u) + energia(v)
+
+				se (custoCaminho(v) > novoCustoCaminho):
+					custoCaminho(v) = novoCustoCaminho
+					anterior(v) = u
+				fim se
+			fim para cada
+		fim se
+
+		heapReconstroi(h)
+	fim enquanto
+fim Djikstra
+
+
+
