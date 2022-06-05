@@ -1,0 +1,8 @@
+Grafo: W(w*h + 8(w*h)/7) // Armazena todos os pixels como vertice,
+						 //  e cada pixel armazena uma referência para seus adjacentes.
+	-> W(15*(w*h)/7)
+	Djikstra: W(w*h + 8(w*h)/7) // O Heap é uma cópia de todos os vértices
+	Rotacionar: W(w*h + 8(w*h)/7) // Uma cópia de todos os vértices. Transpor.
+
+Matriz: W(w*h) // Precisa armazenar apenas a imagem.
+	Rotacionar: W(w*h) // Uma cópia de todos os vértices. Transpor.
