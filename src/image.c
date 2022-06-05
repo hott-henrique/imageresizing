@@ -14,17 +14,17 @@ struct image_t {
 	} representations;
 };
 
-Image img_Load(const char * filePath, char mode) { // O(n^2)
+Image img_Load(const char * filePath, char mode) {
 	Image i = (Image) malloc(sizeof(struct image_t));
 	i->mode = mode;
 
 	switch (i->mode) {
 		case 'M':
-			i->representations.M = mimg_Load(filePath); // O(n^2)
+			i->representations.M = mimg_Load(filePath);
 		break;
 
 		case 'G':
-			i->representations.G = gimg_Load(filePath); // O(n^2)
+			i->representations.G = gimg_Load(filePath);
 		break;
 
 		default:

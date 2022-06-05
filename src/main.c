@@ -41,19 +41,6 @@ int main(int argc, char ** argv) {
 
 	args_Parse(&args, argc, argv);
 
-//	printf("inputFilePath: %s\n"
-//		   "outputFilePath: %s\n"
-//		   "imageMode: %c\n"
-//		   "columnsToRemove: %ld\n"
-//		   "linesToRemove: %ld\n"
-//		   "energyOperator: %c\n",
-//		   args.inputFilePath,
-//		   args.outputFilePath,
-//		   args.imageMode,
-//		   args.columnsToRemove,
-//		   args.linesToRemove,
-//		   args.operator);
-
 	if (NULL == args.inputFilePath) {
 		fprintf(stderr, "Please provide an input file.\n");
 		return EXIT_FAILURE;

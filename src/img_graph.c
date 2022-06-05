@@ -72,12 +72,11 @@ typedef struct heap_vertex_t {
 
 HeapV hp_New(GImage gi);
 void hp_Free(HeapV h);
-void hp_Populate(HeapV h);
 void hp_Insert(HeapV h, vpixel vpx);
 vpixel hp_Pop(HeapV h);
 void hp_Sort(HeapV h);
 void hp_Swap(HeapV h, int indexA, int indexB);
-short hp_UpdateVPixel(HeapV h, VPixel v, VPixel u);
+void hp_UpdateVPixel(HeapV h, VPixel v, VPixel u);
 
 GImage gimg_Load(const char * filePath) {
 #ifdef TIMING
@@ -389,6 +388,7 @@ static void gimg_Djikstra(GImage gi, VPixel startingPoint) {
 	while (h->size > 0) {
 		vpixel u = hp_Pop(h);
 
+		/* This checking is to avoid self-loops in the last line. */
 		if (u.position.x != gi->currentHeight - 1) {
 			for (int i = 0; i < u.szAdjacent; i++) {
 				VPixel v = u.adjacent[i];
@@ -480,6 +480,7 @@ static void gimg_RemakeRightBounderies(GImage gi) {
 	t_Print(&t, timingstdout, __func__, gi->currentWidth);
 #endif
 }
+
 void gimg_Print(GImage gi, FILE * f) {
 #ifdef TIMING
 	timing t;
@@ -536,18 +537,6 @@ HeapV hp_New(GImage gi) {
 	h->vertices[h->size] = gi->startingPoint;
 
 	return h;
-}
-
-void hp_Populate(HeapV h) {
-	GImage gi = h->img;
-	hp_Insert(h, gi->startingPoint);
-	for (int x = 0; x < gi->currentHeight; x++) {
-		for (int y = 0; y < gi->currentWidth; y++) {
-			int index = INDEX(x, y, gi->currentWidth);
-			hp_Insert(h, gi->vpixels[index]);
-		}
-	}
-	hp_Sort(h);
 }
 
 void hp_Insert(HeapV h, vpixel vpx) {
@@ -623,7 +612,7 @@ void hp_Swap(HeapV h, int indexA, int indexB) {
 	*vB = temp;
 }
 
-short hp_UpdateVPixel(HeapV h, VPixel selected, VPixel previous) {
+void hp_UpdateVPixel(HeapV h, VPixel selected, VPixel previous) {
 	float newPathCost = previous->pathCost + selected->px.energy;
 
 	selected->pathCost = newPathCost;
@@ -639,11 +628,6 @@ short hp_UpdateVPixel(HeapV h, VPixel selected, VPixel previous) {
 		int indexPrevious = INDEX(previous->position.x, previous->position.y, h->img->allocatedWidth);
 		h->img->vpixels[indexPos].previous = &h->img->vpixels[indexPrevious];
 	}
-
-	if (newPathCost < h->vertices[0].pathCost)
-		return 1;
-
-	return 0;
 }
 
 void hp_Free(HeapV h) {

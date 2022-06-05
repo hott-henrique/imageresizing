@@ -1,7 +1,0 @@
-time in seconds
-main|50|5.01
-main|100|9.50
-main|150|13.60
-main|200|17.38
-main|250|20.81
-main|300|23.73
