@@ -3,15 +3,7 @@
 
 enum Operators {
 	Sobel = 'S',
-	SobelFeldman = 'F',
-};
-
-enum PathOptions {
-	NOT_CHECKED_YET = -2,
-	LEFT = -1,
-	CENTER = 0,
-	RIGHT = 1,
-	LAST_PIXEL = 2,
+	Scharr = 'C',
 };
 
 struct pixel_t {

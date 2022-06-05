@@ -128,7 +128,7 @@ short args_Parse(arguments * args, int argc, char ** argv) {
 				break;
 
 				case 'S':
-				case 'F':
+				case 'C':
 					args->operator = *argv[optind];
 				break;
 			}
@@ -147,6 +147,6 @@ void args_ShowUsage(const char * programName) {
 	fprintf(stderr, "\t-(i(nput)/f(ile)) <path/to/image.ppm>\n");
 	fprintf(stderr, "\t-h(eight) <remotions> for height | -w(width) <remotions> for width | or both.\n");
 	fprintf(stderr, "\t-o(output) <path/to/output.ppm> or none for stdout.\n");
-	fprintf(stderr, "\t-e(nergy) S for Sobel operator | F for Sobel Feldman operator.\n");
+	fprintf(stderr, "\t-e(nergy) S for Sobel operator | C for Scharr operator.\n");
 	exit(EXIT_FAILURE);
 }

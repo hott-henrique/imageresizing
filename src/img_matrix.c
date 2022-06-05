@@ -17,6 +17,14 @@ extern FILE * timingstdout;
  *		y = columns (width)
  * */
 
+enum PathOptions {
+	NOT_CHECKED_YET = -2,
+	LEFT = -1,
+	CENTER = 0,
+	RIGHT = 1,
+	LAST_PIXEL = 2,
+};
+
 struct mpixel_t {
 	pixel px;
 	short next;
