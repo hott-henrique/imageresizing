@@ -7,11 +7,14 @@ OBJ_DIR := obj
 
 OBJ := $(addprefix $(OBJ_DIR)/, $(notdir $(patsubst %.c, %.o, $(wildcard $(SRC_DIR)/*.c))))
 
-$(NAME): $(OBJ)
+$(NAME): obj_dir_check $(OBJ)
 	$(CC) $(CFLAGS) $(OBJ) -o $(NAME) -lm
 
 obj/%.o: $(SRC_DIR)/%.c
 	$(CC) $(DEFS) -c $(CFLAGS) $< -o $@
+
+obj_dir_check:
+	mkdir -p obj
 
 .PHONY: clean
 clean:
