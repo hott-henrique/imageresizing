@@ -1,5 +1,5 @@
 CFLAGS := -Wall -Wextra -iquote ./include
-DEFS := -D NONE
+DEFS := -D TIMING
 NAME := tp2
 
 SRC_DIR := src
